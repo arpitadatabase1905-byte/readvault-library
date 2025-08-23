@@ -1,12 +1,13 @@
+// script.js
 import { db } from "./firebase.js";
 import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const bookList = document.getElementById("bookList");
 
-// ✅ Add book using Google Books API
+// Add book using Google Books API or manual input
 document.getElementById("addBookBtn").addEventListener("click", async () => {
-  const isbn = document.getElementById("isbn").value;
-  const name = document.getElementById("bookName").value;
+  const isbn = document.getElementById("isbn").value.trim();
+  const name = document.getElementById("bookName").value.trim();
 
   if (!isbn && !name) {
     alert("Please enter ISBN or Book Name");
@@ -14,56 +15,62 @@ document.getElementById("addBookBtn").addEventListener("click", async () => {
   }
 
   try {
-    let apiUrl = "";
-    if (isbn) {
-      apiUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`;
-    } else {
-      apiUrl = `https://www.googleapis.com/books/v1/volumes?q=intitle:${name}`;
+    let title = name;
+    let author = "Unknown";
+    let cover = "";
+
+    if (isbn || name) {
+      // Fetch from Google Books API
+      const apiUrl = isbn
+        ? `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+        : `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(name)}`;
+
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+
+      if (data.items && data.items.length > 0) {
+        const bookInfo = data.items[0].volumeInfo;
+        title = bookInfo.title || name;
+        author = bookInfo.authors ? bookInfo.authors.join(", ") : "Unknown";
+        cover = bookInfo.imageLinks ? bookInfo.imageLinks.thumbnail : "";
+      }
     }
 
-    const res = await fetch(apiUrl);
-    const data = await res.json();
+    // Save to Firestore
+    await addDoc(collection(db, "books"), {
+      title: title,
+      author: author,
+      isbn: isbn || "N/A",
+      cover: cover,
+      createdAt: new Date()
+    });
 
-    if (data.items && data.items.length > 0) {
-      const bookInfo = data.items[0].volumeInfo;
+    document.getElementById("bookName").value = "";
+    document.getElementById("isbn").value = "";
+    alert("✅ Book added!");
+    loadBooks();
 
-      const bookData = {
-        title: bookInfo.title || name,
-        author: bookInfo.authors ? bookInfo.authors.join(", ") : "Unknown",
-        isbn: isbn || "N/A",
-        cover: bookInfo.imageLinks ? bookInfo.imageLinks.thumbnail : "",
-        createdAt: new Date()
-      };
-
-      await addDoc(collection(db, "books"), bookData);
-
-      document.getElementById("bookName").value = "";
-      document.getElementById("isbn").value = "";
-      alert("Book added ✅");
-      loadBooks();
-    } else {
-      alert("No book found for given input ❌");
-    }
   } catch (e) {
-    console.error("Error adding book: ", e);
+    console.error("Error adding book:", e);
     alert("Failed to add book ❌");
   }
 });
 
-// ✅ Load books
+// Load books from Firestore
 async function loadBooks() {
   bookList.innerHTML = "";
   const querySnapshot = await getDocs(collection(db, "books"));
+
   querySnapshot.forEach((docSnap) => {
     const book = docSnap.data();
 
     const li = document.createElement("li");
+    li.style.marginBottom = "10px";
     li.innerHTML = `
-      <img src="${book.cover}" alt="cover" style="height:60px; vertical-align:middle; margin-right:10px;">
+      ${book.cover ? `<img src="${book.cover}" alt="cover" style="height:60px; vertical-align:middle; margin-right:10px;">` : ""}
       <b>${book.title}</b> by ${book.author} (ISBN: ${book.isbn})
     `;
 
-    // 🔴 Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌ Delete";
     deleteBtn.style.marginLeft = "10px";
@@ -78,5 +85,5 @@ async function loadBooks() {
   });
 }
 
-// Load when page starts
+// Load books on page start
 loadBooks();

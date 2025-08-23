@@ -1,5 +1,3 @@
-import { db } from "./firebase.js";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 // firebase.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -16,26 +14,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);  // ✅ Firestore connection
-
-async function testAddBook() {
-  try {
-    await addDoc(collection(db, "books"), {
-      title: "Test Book",
-      author: "Test Author",
-      isbn: "12345",
-      cover: "",
-      createdAt: new Date()
-    });
-    alert("✅ Test book added to Firestore!");
-  } catch (e) {
-    console.error("🔥 Error adding test book:", e);
-    alert("Failed to add test book. Check console.");
-  }
-}
-
-// Call test function once to try adding
-testAddBook();
-
+const db = getFirestore(app);
 
 export { db };

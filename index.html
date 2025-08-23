@@ -1,36 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ReadVault 📚</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>ReadVault</title>
 </head>
 <body>
-  <header>
-    <h1>📚 ReadVault</h1>
-    <p>Your personal online library</p>
-  </header>
+  <h1>📚 ReadVault</h1>
+  <p>Your personal online library</p>
 
-  <main>
-    <!-- Book Adding Form -->
-    <section class="add-book">
-      <h2>Add a Book</h2>
-      <input type="text" id="bookName" placeholder="Enter book name" />
-      <input type="text" id="isbn" placeholder="Enter ISBN code" />
-      <button id="addBookBtn">Add to My Library</button>
-    </section>
+  <div>
+    <input type="text" id="bookName" placeholder="Enter book name">
+    <input type="text" id="isbn" placeholder="Enter ISBN code">
+    <button id="addBookBtn">Add to My Library</button>
+  </div>
 
-    <!-- My Library Section -->
-    <section class="library">
-      <h2>My Library</h2>
-      <ul id="bookList"></ul>
-    </section>
-  </main>
-
-  <footer>
-    <p>Made with ❤️ using Firebase + Vercel</p>
-  </footer>
+  <h2>📖 My Library</h2>
+  <ul id="bookList"></ul>
 
   <script type="module" src="script.js"></script>
 </body>
