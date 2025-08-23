@@ -1,0 +1,66 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f7fa;
+  color: #333;
+  text-align: center;
+}
+
+header {
+  background: #4a90e2;
+  color: white;
+  padding: 20px 10px;
+}
+
+h1 {
+  margin: 0;
+}
+
+main {
+  margin: 20px;
+}
+
+.add-book, .library {
+  background: white;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+input {
+  padding: 10px;
+  margin: 5px;
+  width: calc(100% - 20px);
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  padding: 10px 15px;
+  margin-top: 10px;
+  background: #4a90e2;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #357ab8;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  background: #eaf0f6;
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
