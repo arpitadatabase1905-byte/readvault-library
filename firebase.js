@@ -67,4 +67,20 @@ async function loadBooks() {
       <b>${book.title}</b> by ${book.author} (ISBN: ${book.isbn})
     `;
 
-    // 🔴 Dele
+    // 🔴 Delete button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "❌ Delete";
+    deleteBtn.style.marginLeft = "10px";
+    deleteBtn.addEventListener("click", async () => {
+      await deleteDoc(doc(db, "books", docSnap.id));
+      alert("🗑️ Book deleted");
+      loadBooks();
+    });
+
+    li.appendChild(deleteBtn);
+    bookList.appendChild(li);
+  });
+}
+
+// Load when page starts
+loadBooks();
