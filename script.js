@@ -1,6 +1,6 @@
 // script.js
 import { db } from "./firebase.js";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const bookList = document.getElementById("bookList");
 
@@ -13,10 +13,9 @@ document.getElementById("addBookBtn").addEventListener("click", async () => {
 
   let title = name || "Unknown Title";
   let author = "Unknown Author";
-  let cover = "https://via.placeholder.com/60x90?text=No+Cover";
+  let cover = "https://via.placeholder.com/150x180?text=No+Cover";
 
   try {
-    // Fetch from Google Books API if ISBN or name is provided
     const apiUrl = isbn
       ? `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
       : `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(name)}`;
@@ -31,7 +30,6 @@ document.getElementById("addBookBtn").addEventListener("click", async () => {
       cover = bookInfo.imageLinks ? bookInfo.imageLinks.thumbnail : cover;
     }
 
-    // Save to Firestore
     await addDoc(collection(db, "books"), {
       title,
       author,
@@ -50,19 +48,19 @@ document.getElementById("addBookBtn").addEventListener("click", async () => {
   }
 });
 
-// Search button
+// Search with dropdown and partial match
 document.getElementById("searchBtn").addEventListener("click", async () => {
-  const searchText = document.getElementById("searchInput").value.trim();
+  const searchText = document.getElementById("searchInput").value.trim().toLowerCase();
   const searchType = document.getElementById("searchType").value;
   if (!searchText) return alert("Please enter search text");
 
-  let q = collection(db, "books");
-  if (searchType === "title") q = query(q, where("title", "==", searchText));
-  if (searchType === "author") q = query(q, where("author", "==", searchText));
-  if (searchType === "isbn") q = query(q, where("isbn", "==", searchText));
+  const querySnapshot = await getDocs(collection(db, "books"));
+  const filteredBooks = querySnapshot.docs.filter(docSnap => {
+    const book = docSnap.data();
+    return book[searchType].toLowerCase().includes(searchText);
+  });
 
-  const querySnapshot = await getDocs(q);
-  displayBooks(querySnapshot);
+  displayBooks({ forEach: fn => filteredBooks.forEach(fn), empty: filteredBooks.length === 0 });
 });
 
 // Load all books
@@ -71,10 +69,10 @@ async function loadBooks() {
   displayBooks(querySnapshot);
 }
 
-// Display books
+// Display books in grid
 function displayBooks(querySnapshot) {
   bookList.innerHTML = "";
-  
+
   if (querySnapshot.empty) {
     bookList.innerHTML = "<li>No books found</li>";
     return;
@@ -85,30 +83,19 @@ function displayBooks(querySnapshot) {
     const bookId = docSnap.id;
 
     const li = document.createElement("li");
-    li.style.marginBottom = "10px";
-    li.style.listStyle = "none";
-
     li.innerHTML = `
-      <img src="${book.cover || 'https://via.placeholder.com/60x90?text=No+Cover'}" 
-           alt="cover" style="height:60px; vertical-align:middle; margin-right:10px;">
-      <b>${book.title}</b> by ${book.author} (ISBN: ${book.isbn})
+      <img src="${book.cover || 'https://via.placeholder.com/150x180?text=No+Cover'}" alt="cover">
+      <b>${book.title}</b><br>
+      ${book.author}<br>
+      ISBN: ${book.isbn}<br>
+      <button class="deleteBtn">❌ Delete</button>
     `;
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "❌ Delete";
-    deleteBtn.style.marginLeft = "10px";
-
-    deleteBtn.addEventListener("click", async () => {
-      try {
-        await deleteDoc(doc(db, "books", bookId));
-        loadBooks(); // reload the list
-      } catch (e) {
-        console.error("Error deleting book:", e);
-        alert("Failed to delete book ❌");
-      }
+    li.querySelector(".deleteBtn").addEventListener("click", async () => {
+      await deleteDoc(doc(db, "books", bookId));
+      loadBooks();
     });
 
-    li.appendChild(deleteBtn);
     bookList.appendChild(li);
   });
 }
