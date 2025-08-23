@@ -1,10 +1,9 @@
-// script.js
 import { db } from "./firebase.js";
 import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const bookList = document.getElementById("bookList");
 
-// Add book button
+// Add book
 document.getElementById("addBookBtn").addEventListener("click", async () => {
   const isbn = document.getElementById("isbn").value.trim();
   const name = document.getElementById("bookName").value.trim();
@@ -30,13 +29,7 @@ document.getElementById("addBookBtn").addEventListener("click", async () => {
       cover = bookInfo.imageLinks ? bookInfo.imageLinks.thumbnail : cover;
     }
 
-    await addDoc(collection(db, "books"), {
-      title,
-      author,
-      isbn: isbn || "N/A",
-      cover,
-      createdAt: new Date()
-    });
+    await addDoc(collection(db, "books"), { title, author, isbn: isbn || "N/A", cover, createdAt: new Date() });
 
     document.getElementById("bookName").value = "";
     document.getElementById("isbn").value = "";
@@ -48,16 +41,19 @@ document.getElementById("addBookBtn").addEventListener("click", async () => {
   }
 });
 
-// Search with dropdown and partial match
+// Partial search
 document.getElementById("searchBtn").addEventListener("click", async () => {
-  const searchText = document.getElementById("searchInput").value.trim().toLowerCase();
-  const searchType = document.getElementById("searchType").value;
-  if (!searchText) return alert("Please enter search text");
+  const titleSearch = document.getElementById("searchTitle").value.trim().toLowerCase();
+  const authorSearch = document.getElementById("searchAuthor").value.trim().toLowerCase();
+  const isbnSearch = document.getElementById("searchISBN").value.trim().toLowerCase();
 
   const querySnapshot = await getDocs(collection(db, "books"));
+
   const filteredBooks = querySnapshot.docs.filter(docSnap => {
     const book = docSnap.data();
-    return book[searchType].toLowerCase().includes(searchText);
+    return (!titleSearch || book.title.toLowerCase().includes(titleSearch)) &&
+           (!authorSearch || book.author.toLowerCase().includes(authorSearch)) &&
+           (!isbnSearch || book.isbn.toLowerCase().includes(isbnSearch));
   });
 
   displayBooks({ forEach: fn => filteredBooks.forEach(fn), empty: filteredBooks.length === 0 });

@@ -25,25 +25,42 @@
       height: 180px;
       margin-bottom: 10px;
     }
+
+    .search-bar input {
+      margin-right: 10px;
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+
+    .search-bar button {
+      padding: 5px 10px;
+    }
+
+    .add-book input {
+      margin-right: 10px;
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+
+    .add-book button {
+      padding: 5px 10px;
+    }
   </style>
 </head>
 <body>
   <h1>📚 ReadVault</h1>
   <p>Your personal online library</p>
 
-  <!-- Search bar with dropdown -->
-  <div>
-    <select id="searchType">
-      <option value="title">Search by Title</option>
-      <option value="author">Search by Author</option>
-      <option value="isbn">Search by ISBN</option>
-    </select>
-    <input type="text" id="searchInput" placeholder="Enter search text">
+  <!-- Search bar -->
+  <div class="search-bar">
+    <input type="text" id="searchTitle" placeholder="Book Name">
+    <input type="text" id="searchAuthor" placeholder="Author">
+    <input type="text" id="searchISBN" placeholder="ISBN">
     <button id="searchBtn">Search</button>
   </div>
 
   <!-- Add book -->
-  <div>
+  <div class="add-book">
     <input type="text" id="bookName" placeholder="Enter book name">
     <input type="text" id="isbn" placeholder="Enter ISBN code">
     <button id="addBookBtn">Add to My Library</button>
