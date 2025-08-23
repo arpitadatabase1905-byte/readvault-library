@@ -1,17 +1,70 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { db } from "./firebase.js";
+import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
-  authDomain: "readvault-58040.firebaseapp.com",
-  projectId: "readvault-58040",
-  storageBucket: "readvault-58040.firebasestorage.app",
-  messagingSenderId: "735101113966",
-  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
-};
+const bookList = document.getElementById("bookList");
+const addBookBtn = document.getElementById("addBookBtn");
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// ✅ Add book using Google Books API
+addBookBtn.addEventListener("click", async () => {
+  const isbn = document.getElementById("isbn").value.trim();
+  const name = document.getElementById("bookName").value.trim();
+
+  if (!isbn && !name) {
+    alert("Please enter ISBN or Book Name");
+    return;
+  }
+
+  try {
+    let apiUrl = isbn
+      ? `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+      : `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(name)}`;
+
+    console.log("📡 Fetching from:", apiUrl);
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    console.log("📖 API Response:", data);
+
+    if (data.items && data.items.length > 0) {
+      const bookInfo = data.items[0].volumeInfo;
+
+      const bookData = {
+        title: bookInfo.title || name,
+        author: bookInfo.authors ? bookInfo.authors.join(", ") : "Unknown",
+        isbn: isbn || "N/A",
+        cover: bookInfo.imageLinks ? bookInfo.imageLinks.thumbnail : "",
+        createdAt: new Date()
+      };
+
+      console.log("💾 Saving to Firestore:", bookData);
+
+      await addDoc(collection(db, "books"), bookData);
+
+      document.getElementById("bookName").value = "";
+      document.getElementById("isbn").value = "";
+      alert("✅ Book added!");
+      loadBooks();
+    } else {
+      alert("❌ No book found for given input");
+    }
+  } catch (e) {
+    console.error("🔥 Error adding book:", e);
+    alert("Failed to add book ❌ (check console for details)");
+  }
+});
+
+// ✅ Load books from Firestore
+async function loadBooks() {
+  bookList.innerHTML = "";
+  const querySnapshot = await getDocs(collection(db, "books"));
+  console.log("📚 Loaded books:", querySnapshot.size);
+
+  querySnapshot.forEach((docSnap) => {
+    const book = docSnap.data();
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <img src="${book.cover}" alt="cover" style="height:60px; vertical-align:middle; margin-right:10px;">
+      <b>${book.title}</b> by ${book.author} (ISBN: ${book.isbn})
+    `;
+
+    // 🔴 Dele
