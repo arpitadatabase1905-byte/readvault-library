@@ -8,14 +8,25 @@
   <h1>📚 ReadVault</h1>
   <p>Your personal online library</p>
 
-  <div>
-    <input type="text" id="bookName" placeholder="Enter book name">
-    <input type="text" id="isbn" placeholder="Enter ISBN code">
-    <button id="addBookBtn">Add to My Library</button>
-  </div>
+<div>
+  <select id="searchType">
+    <option value="title">Search by Title</option>
+    <option value="author">Search by Author</option>
+    <option value="isbn">Search by ISBN</option>
+  </select>
+  <input type="text" id="searchInput" placeholder="Enter search text">
+  <button id="searchBtn">Search</button>
+</div>
 
-  <h2>📖 My Library</h2>
-  <ul id="bookList"></ul>
+<div>
+  <input type="text" id="bookName" placeholder="Enter book name">
+  <input type="text" id="isbn" placeholder="Enter ISBN code">
+  <button id="addBookBtn">Add to My Library</button>
+</div>
+
+<h2>📖 My Library</h2>
+<ul id="bookList"></ul>
+
 
   <script type="module" src="script.js"></script>
 </body>
