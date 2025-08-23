@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ReadVault</title>
+  <title>📚 ReadVault</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
     #bookList {
       display: flex;
       flex-wrap: wrap;
@@ -26,23 +35,13 @@
       margin-bottom: 10px;
     }
 
-    .search-bar input {
+    .search-bar input, .add-book input {
       margin-right: 10px;
       margin-bottom: 10px;
       padding: 5px;
     }
 
-    .search-bar button {
-      padding: 5px 10px;
-    }
-
-    .add-book input {
-      margin-right: 10px;
-      margin-bottom: 10px;
-      padding: 5px;
-    }
-
-    .add-book button {
+    button {
       padding: 5px 10px;
     }
   </style>
@@ -51,23 +50,38 @@
   <h1>📚 ReadVault</h1>
   <p>Your personal online library</p>
 
-  <!-- Search bar -->
-  <div class="search-bar">
-    <input type="text" id="searchTitle" placeholder="Book Name">
-    <input type="text" id="searchAuthor" placeholder="Author">
-    <input type="text" id="searchISBN" placeholder="ISBN">
-    <button id="searchBtn">Search</button>
+  <!-- 🔹 Auth forms -->
+  <div id="authSection">
+    <h2>Login / Sign Up</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <br>
+    <button id="signupBtn">Sign Up</button>
+    <button id="loginBtn">Login</button>
   </div>
 
-  <!-- Add book -->
-  <div class="add-book">
-    <input type="text" id="bookName" placeholder="Enter book name">
-    <input type="text" id="isbn" placeholder="Enter ISBN code">
-    <button id="addBookBtn">Add to My Library</button>
-  </div>
+  <!-- 🔹 Main library section (hidden until logged in) -->
+  <div id="librarySection" class="hidden">
+    <!-- Search bar -->
+    <div class="search-bar">
+      <input type="text" id="searchTitle" placeholder="Book Name">
+      <input type="text" id="searchAuthor" placeholder="Author">
+      <input type="text" id="searchISBN" placeholder="ISBN">
+      <button id="searchBtn">Search</button>
+    </div>
 
-  <h2>📖 My Library</h2>
-  <ul id="bookList"></ul>
+    <!-- Add book -->
+    <div class="add-book">
+      <input type="text" id="bookName" placeholder="Enter book name">
+      <input type="text" id="isbn" placeholder="Enter ISBN code">
+      <button id="addBookBtn">Add to My Library</button>
+    </div>
+
+    <h2>📖 My Library</h2>
+    <ul id="bookList"></ul>
+
+    <button id="logoutBtn">Logout</button>
+  </div>
 
   <script type="module" src="script.js"></script>
 </body>
