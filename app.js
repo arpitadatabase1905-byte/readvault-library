@@ -1,30 +1,107 @@
-// Import Firebase (using modules)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+// app.js
+import { auth, db } from "./firebase.js";
+import { 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { 
+  collection, addDoc, getDocs, query, where 
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// === SIGN UP ===
+async function signup(email, password) {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    alert("Signup successful! Welcome " + userCredential.user.email);
+  } catch (error) {
+    alert("Signup error: " + error.message);
+  }
+}
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
-  authDomain: "readvault-58040.firebaseapp.com",
-  projectId: "readvault-58040",
-  storageBucket: "readvault-58040.firebasestorage.app",
-  messagingSenderId: "735101113966",
-  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
-};
+// === LOGIN ===
+async function login(email, password) {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    alert("Logged in as " + userCredential.user.email);
+  } catch (error) {
+    alert("Login error: " + error.message);
+  }
+}
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// === LOGOUT ===
+async function logout() {
+  try {
+    await signOut(auth);
+    alert("Logged out");
+  } catch (error) {
+    alert("Logout error: " + error.message);
+  }
+}
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// === LISTEN FOR AUTH CHANGES ===
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById("user-status").innerText = `Logged in as ${user.email}`;
+    loadBooks(user.uid);
+  } else {
+    document.getElementById("user-status").innerText = "Not logged in";
+  }
+});
 
-// Export if needed
-export { auth, db };
+// === ADD BOOK TO FIRESTORE ===
+async function addBook(userId, title, author) {
+  try {
+    await addDoc(collection(db, "books"), {
+      userId,
+      title,
+      author,
+      createdAt: new Date()
+    });
+    alert("Book added!");
+  } catch (error) {
+    alert("Error adding book: " + error.message);
+  }
+}
+
+// === LOAD USER’S BOOKS ===
+async function loadBooks(userId) {
+  const q = query(collection(db, "books"), where("userId", "==", userId));
+  const querySnapshot = await getDocs(q);
+  const bookList = document.getElementById("book-list");
+  bookList.innerHTML = "";
+
+  querySnapshot.forEach((doc) => {
+    const book = doc.data();
+    const li = document.createElement("li");
+    li.innerText = `${book.title} by ${book.author}`;
+    bookList.appendChild(li);
+  });
+}
+
+// === Attach to UI buttons (example) ===
+document.getElementById("signup-btn").addEventListener("click", () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  signup(email, password);
+});
+
+document.getElementById("login-btn").addEventListener("click", () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  login(email, password);
+});
+
+document.getElementById("logout-btn").addEventListener("click", logout);
+
+document.getElementById("add-book-btn").addEventListener("click", () => {
+  const title = document.getElementById("book-title").value;
+  const author = document.getElementById("book-author").value;
+  const user = auth.currentUser;
+  if (user) {
+    addBook(user.uid, title, author);
+  } else {
+    alert("Please log in first!");
+  }
+});

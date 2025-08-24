@@ -1,98 +1,88 @@
-import { auth, db } from "./Firebase.js";
-import { collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+// script.js
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// Dummy user (replace with real auth later)
-const userId = "demoUser";
+// References to UI elements
+const libraryDiv = document.getElementById("library");
+const genreCollectionDiv = document.getElementById("genreCollection");
 
-// ====================== TAB SWITCH ======================
-window.showTab = function(tab) {
-  document.getElementById("libraryTab").style.display = tab === "library" ? "block" : "none";
-  document.getElementById("genreTab").style.display = tab === "genreCollection" ? "block" : "none";
-};
-
-// ====================== ADD BOOK (Example Data) ======================
-// You’ll replace this with Google Books API search later
-async function addSampleBooks() {
-  const sampleBooks = [
-    { title: "Book A", authors: "Author 1", genre: "Fiction", cover: "https://via.placeholder.com/100x150" },
-    { title: "Book B", authors: "Author 2", genre: "History", cover: "https://via.placeholder.com/100x150" },
-    { title: "Book C", authors: "Author 3", genre: "Science", cover: "https://via.placeholder.com/100x150" },
-    { title: "Book D", authors: "Author 4", genre: "Fiction", cover: "https://via.placeholder.com/100x150" },
-  ];
-
-  for (let book of sampleBooks) {
-    const docRef = doc(collection(db, "users", userId, "books"));
-    await setDoc(docRef, book);
-  }
-}
-
-// ====================== FETCH BOOKS ======================
+// Fetch all books from Firestore
 async function fetchBooks() {
-  const querySnap = await getDocs(collection(db, "users", userId, "books"));
-  const books = [];
-  querySnap.forEach(doc => books.push(doc.data()));
+  try {
+    const querySnapshot = await getDocs(collection(db, "books"));
 
-  displayBooks(books);
-  displayBooksByGenre(books);
-}
-
-// ====================== DISPLAY LIBRARY ======================
-function displayBooks(books) {
-  const libraryDiv = document.getElementById("library");
-  libraryDiv.innerHTML = "";
-
-  books.forEach(book => {
-    const card = document.createElement("div");
-    card.classList.add("book-card");
-    card.innerHTML = `
-      <img src="${book.cover}" alt="${book.title}">
-      <h3>${book.title}</h3>
-      <p>${book.authors}</p>
-      <span class="genre-tag">${book.genre || "Unknown"}</span>
-    `;
-    libraryDiv.appendChild(card);
-  });
-}
-
-// ====================== DISPLAY GENRE COLLECTION ======================
-function displayBooksByGenre(books) {
-  const genreDiv = document.getElementById("genreCollection");
-  genreDiv.innerHTML = "";
-
-  const grouped = {};
-  books.forEach(book => {
-    const genre = book.genre || "Unknown";
-    if (!grouped[genre]) grouped[genre] = [];
-    grouped[genre].push(book);
-  });
-
-  for (let genre in grouped) {
-    const section = document.createElement("div");
-    section.classList.add("genre-section");
-    section.innerHTML = `<h2>${genre}</h2>`;
-
-    const row = document.createElement("div");
-    row.classList.add("book-grid");
-
-    grouped[genre].forEach(book => {
-      const card = document.createElement("div");
-      card.classList.add("book-card");
-      card.innerHTML = `
-        <img src="${book.cover}" alt="${book.title}">
-        <h3>${book.title}</h3>
-        <p>${book.authors}</p>
-      `;
-      row.appendChild(card);
+    let books = [];
+    querySnapshot.forEach((doc) => {
+      books.push({ id: doc.id, ...doc.data() });
     });
 
-    section.appendChild(row);
-    genreDiv.appendChild(section);
+    displayLibrary(books);
+    displayByGenre(books);
+
+  } catch (error) {
+    console.error("❌ Error fetching books:", error);
   }
 }
 
-// ====================== INIT ======================
-(async function init() {
-  // Uncomment this once only to add dummy books:
-  // await addSampleBooks();
-  await fetchBooks();
-})();
+// Display books in "My Library"
+function displayLibrary(books) {
+  libraryDiv.innerHTML = "";
+  if (books.length === 0) {
+    libraryDiv.innerHTML = "<p>No books in your library yet.</p>";
+    return;
+  }
+
+  books.forEach(book => {
+    const bookCard = document.createElement("div");
+    bookCard.classList.add("book-card");
+    bookCard.innerHTML = `
+      <h3>${book.title || "Untitled"}</h3>
+      <p><strong>Author:</strong> ${book.author || "Unknown"}</p>
+      <p><strong>Genre:</strong> ${book.genre || "Not specified"}</p>
+    `;
+    libraryDiv.appendChild(bookCard);
+  });
+}
+
+// Display books grouped by genre
+function displayByGenre(books) {
+  genreCollectionDiv.innerHTML = "";
+  if (books.length === 0) {
+    genreCollectionDiv.innerHTML = "<p>No books available by genre.</p>";
+    return;
+  }
+
+  // Group by genre
+  const genreMap = {};
+  books.forEach(book => {
+    const genre = book.genre || "Other";
+    if (!genreMap[genre]) genreMap[genre] = [];
+    genreMap[genre].push(book);
+  });
+
+  // Render genres
+  for (const [genre, genreBooks] of Object.entries(genreMap)) {
+    const genreSection = document.createElement("div");
+    genreSection.classList.add("genre-section");
+    genreSection.innerHTML = `<h3>${genre}</h3>`;
+
+    const bookList = document.createElement("div");
+    bookList.classList.add("book-grid");
+
+    genreBooks.forEach(book => {
+      const bookCard = document.createElement("div");
+      bookCard.classList.add("book-card");
+      bookCard.innerHTML = `
+        <h4>${book.title || "Untitled"}</h4>
+        <p><strong>Author:</strong> ${book.author || "Unknown"}</p>
+      `;
+      bookList.appendChild(bookCard);
+    });
+
+    genreSection.appendChild(bookList);
+    genreCollectionDiv.appendChild(genreSection);
+  }
+}
+
+// Load books when page loads
+fetchBooks();
