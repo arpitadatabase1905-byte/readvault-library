@@ -13,7 +13,8 @@ import {
   addDoc, 
   getDocs,
   doc,
-  deleteDoc
+  deleteDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ---- Firebase Config ----
@@ -66,12 +67,22 @@ loginBtn.addEventListener("click", async () => {
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
   if (!email || !password) return alert("Enter both email and password");
-  try { await signInWithEmailAndPassword(auth, email, password); alert("✅ Logged in!"); loginEmail.value = ""; loginPassword.value = ""; }
+  try { 
+    await signInWithEmailAndPassword(auth, email, password); 
+    alert("✅ Logged in!"); 
+    loginEmail.value = ""; 
+    loginPassword.value = ""; 
+  }
   catch (error) { alert("❌ " + error.message); }
 });
 
 // ---- LOGOUT ----
-logoutBtn.addEventListener("click", async () => { try { await signOut(auth); alert("🚪 Logged out!"); } catch (error) { alert(error.message); } });
+logoutBtn.addEventListener("click", async () => { 
+  try { 
+    await signOut(auth); 
+    alert("🚪 Logged out!"); 
+  } catch (error) { alert(error.message); } 
+});
 
 // ---- AUTH STATE CHANGE ----
 onAuthStateChanged(auth, (user) => {
@@ -105,9 +116,21 @@ async function loadBooks(uid) {
       <button class="deleteBtn">Delete</button>
     `;
 
-    // ---- Edit Button: placeholder ----
-    li.querySelector(".editBtn").addEventListener("click", () => {
-      alert("Editing is disabled for now.");
+    // ---- Edit Button ----
+    li.querySelector(".editBtn").addEventListener("click", async () => {
+      const newName = prompt("Enter new book title:", book.name);
+      const newAuthor = prompt("Enter new author:", book.author || "Unknown author");
+      const newISBN = prompt("Enter new ISBN:", book.isbn);
+
+      if (newName && newAuthor && newISBN) {
+        await updateDoc(doc(db, "users", uid, "books", docItem.id), {
+          name: newName,
+          author: newAuthor,
+          isbn: newISBN
+        });
+        alert(`✏️ "${newName}" updated!`);
+        loadBooks(uid);
+      }
     });
 
     // ---- Delete Button ----
