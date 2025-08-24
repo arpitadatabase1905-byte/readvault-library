@@ -19,7 +19,7 @@
     .hidden { display: none; }
 
     #authSection, #librarySection {
-      max-width: 650px;
+      max-width: 700px;
       margin: 20px auto;
       padding: 25px;
       background: #fff;
@@ -27,7 +27,7 @@
       box-shadow: 0 6px 20px rgba(0,0,0,0.08);
     }
 
-    input, button {
+    input, button, textarea {
       padding: 10px 12px;
       border-radius: 6px;
       border: 1px solid #ccc;
@@ -101,6 +101,23 @@
       padding: 10px;
     }
     #logoutBtn:hover { background: #4285f4; }
+
+    /* Profile */
+    #profileSection {
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 12px;
+      background: #f0f8ff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    #profileSection input, #profileSection textarea, #profileSection button {
+      width: 100%;
+      margin-bottom: 8px;
+    }
+    #saveProfileBtn {
+      background: #1a73e8;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -122,6 +139,15 @@
 
   <!-- Library Section -->
   <div id="librarySection" class="hidden">
+
+    <!-- Profile -->
+    <div id="profileSection">
+      <h2>👤 My Profile</h2>
+      <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+      <p><strong>Name:</strong> <input type="text" id="profileName"></p>
+      <p><strong>Bio:</strong> <textarea id="profileBio" rows="3"></textarea></p>
+      <button id="saveProfileBtn">Save Profile</button>
+    </div>
 
     <!-- Search Bar -->
     <div class="search-bar">
