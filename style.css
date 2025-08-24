@@ -15,16 +15,16 @@ h1 {
   margin-bottom: 20px;
 }
 
-/* ---- Book List Grid ---- */
+/* ---- Book List Grid: 3 per row ---- */
 #bookList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 15px;
+  justify-content: center;
   padding: 0;
   list-style: none;
 }
 
-/* ---- Individual Book Card ---- */
 .book-card {
   display: flex;
   flex-direction: column;
@@ -34,13 +34,8 @@ h1 {
   border-radius: 8px;
   background: #fff;
   box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-  
-  /* Make all cards same height */
-  height: 300px;       /* fixed height */
-  width: 180px;        /* fixed width */
+  flex: 0 1 calc(33.33% - 20px); /* 3 per row with gap adjustment */
   box-sizing: border-box;
-  
-  justify-content: space-between; /* space between image, text, buttons */
   text-align: center;
 }
 
@@ -48,35 +43,32 @@ h1 {
 .book-cover {
   width: 100px;
   height: 120px;
-  object-fit: cover; /* ensures image fits nicely */
+  object-fit: cover;
   border-radius: 4px;
   margin-bottom: 10px;
 }
 
-/* ---- Book Title ---- */
+/* ---- Title, Author, ISBN ---- */
 .book-title {
   font-weight: bold;
   margin: 5px 0;
-  height: 40px;      /* reserve space, multiline wraps */
-  overflow: hidden;
 }
 
-/* ---- Book Author & ISBN ---- */
 .book-author, .book-isbn {
   font-size: 0.9em;
   margin: 2px 0;
   color: #555;
-  height: 30px;      /* reserve space for uniformity */
-  overflow: hidden;
 }
 
 /* ---- Action Buttons ---- */
 .book-actions {
-  margin-top: 10px;
+  margin-top: auto; /* push buttons to the bottom */
+  display: flex;
+  justify-content: center;
+  gap: 5px;
 }
 
 .book-actions button {
-  margin: 0 5px;
   padding: 4px 8px;
   border: none;
   border-radius: 4px;
@@ -104,4 +96,17 @@ h1 {
 
 #logoutBtn:hover {
   background: #4285f4;
+}
+
+/* ---- Responsive for smaller screens ---- */
+@media (max-width: 800px) {
+  .book-card {
+    flex: 0 1 calc(50% - 20px); /* 2 per row on tablets */
+  }
+}
+
+@media (max-width: 500px) {
+  .book-card {
+    flex: 0 1 calc(100% - 20px); /* 1 per row on mobile */
+  }
 }
