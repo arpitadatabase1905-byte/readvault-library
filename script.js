@@ -1,256 +1,216 @@
-// ---- Firebase Setup ----
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { 
-  getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc, serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// script.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  deleteDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
-// ---- Firebase Config ----
+// 🔹 Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
-  authDomain: "readvault-58040.firebaseapp.com",
-  projectId: "readvault-58040",
-  storageBucket: "readvault-58040.appspot.com",
-  messagingSenderId: "735101113966",
-  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-// ---- Initialize Firebase ----
+// 🔹 Init Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ---- DOM Elements ----
-const authSection = document.getElementById("authSection");
-const librarySection = document.getElementById("librarySection");
-const allBooksTab = document.getElementById("allBooksTab");
-const genreTab = document.getElementById("genreTab");
-const genreListDiv = document.getElementById("genreList");
-const searchTitle = document.getElementById("searchTitle");
-const searchBtn = document.getElementById("searchBtn");
-const searchResultsDiv = document.getElementById("searchResults");
-const signupEmail = document.getElementById("signupEmail");
-const signupPassword = document.getElementById("signupPassword");
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
-const signupBtn = document.getElementById("signupBtn");
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const tabButtons = document.querySelectorAll(".tabBtn");
+// 🔹 DOM Elements
+const loginSection = document.getElementById("login-section");
+const signupSection = document.getElementById("signup-section");
+const librarySection = document.getElementById("library-section");
+const loginForm = document.getElementById("login-form");
+const signupForm = document.getElementById("signup-form");
+const addBookForm = document.getElementById("add-book-form");
+const bookListDiv = document.getElementById("book-list");
+const genreListDiv = document.getElementById("genre-list");
+const logoutBtn = document.getElementById("logout-btn");
 
-// ---- Signup ----
-signupBtn.addEventListener("click", async () => {
-  const email = signupEmail.value.trim();
-  const password = signupPassword.value.trim();
-  if (!email || !password) return alert("Enter both email and password");
+// Tabs
+const libraryTab = document.getElementById("library-tab");
+const genreTab = document.getElementById("genre-tab");
 
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const userRef = doc(db, "users", userCredential.user.uid);
-    await setDoc(userRef, { email, createdAt: serverTimestamp() }, { merge: true });
-    alert("✅ Signup successful!");
-    signupEmail.value = ""; signupPassword.value = "";
-  } catch (error) { alert("❌ " + error.message); }
-});
-
-// ---- Login ----
-loginBtn.addEventListener("click", async () => {
-  const email = loginEmail.value.trim();
-  const password = loginPassword.value.trim();
-  if (!email || !password) return alert("Enter both email and password");
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    alert("✅ Logged in!");
-    loginEmail.value = ""; loginPassword.value = "";
-  } catch (error) { alert("❌ " + error.message); }
-});
-
-// ---- Logout ----
-logoutBtn.addEventListener("click", async () => {
-  try { await signOut(auth); alert("🚪 Logged out!"); }
-  catch (error) { alert(error.message); }
-});
-
-// ---- Auth State Change ----
-onAuthStateChanged(auth, async (user) => {
+// ---------------- AUTH -----------------
+onAuthStateChanged(auth, (user) => {
   if (user) {
-    authSection.classList.add("hidden");
-    librarySection.classList.remove("hidden");
-    await loadBooks(user.uid);
+    loginSection.style.display = "none";
+    signupSection.style.display = "none";
+    librarySection.style.display = "block";
+    loadBooks(user.uid);
+    loadBooksByGenre(user.uid);
   } else {
-    authSection.classList.remove("hidden");
-    librarySection.classList.add("hidden");
-    allBooksTab.innerHTML = "";
-    searchResultsDiv.innerHTML = "";
-    genreListDiv.innerHTML = "";
+    loginSection.style.display = "block";
+    signupSection.style.display = "none";
+    librarySection.style.display = "none";
   }
 });
 
-// ---- Load Books ----
-async function loadBooks(uid) {
-  allBooksTab.innerHTML = "";
-  const booksRef = collection(db, "users", uid, "books");
+// Login
+loginForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// Signup
+signupForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("signup-email").value;
+  const password = document.getElementById("signup-password").value;
+
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// Logout
+logoutBtn?.addEventListener("click", () => {
+  signOut(auth);
+});
+
+// ---------------- BOOK FUNCTIONS -----------------
+
+// Add Book
+addBookForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const name = document.getElementById("book-name").value;
+  const author = document.getElementById("book-author").value;
+  const isbn = document.getElementById("book-isbn").value;
+  const cover = document.getElementById("book-cover").value;
+  const genre = document.getElementById("book-genre").value;
+
+  try {
+    await addDoc(collection(db, "users", user.uid, "books"), {
+      name,
+      author,
+      isbn,
+      cover,
+      genre
+    });
+    alert(`✅ "${name}" added!`);
+    addBookForm.reset();
+    loadBooks(user.uid);
+    loadBooksByGenre(user.uid);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// Load Books (Library Tab → 3 per row)
+async function loadBooks(userId) {
+  const booksRef = collection(db, "users", userId, "books");
   const snapshot = await getDocs(booksRef);
+
+  bookListDiv.innerHTML = "";
 
   snapshot.forEach(docItem => {
     const book = docItem.data();
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <strong>${book.name}</strong><br>
-      <em>${book.author || "Unknown author"}</em><br>
-      ISBN: ${book.isbn}<br>
-      Genre: ${book.genre || "Unknown"}<br>
-      ${book.cover ? `<img src="${book.cover}" alt="cover">` : ""}<br>
+    const bookDiv = document.createElement("div");
+    bookDiv.classList.add("book-item");
+
+    bookDiv.innerHTML = `
+      ${book.cover ? `<img src="${book.cover}" alt="cover" style="height:150px;">` : ""}
+      <h4>${book.name}</h4>
+      <p>${book.author || "Unknown"}</p>
+      <p>Genre: ${book.genre || "Unknown"}</p>
+      <p>ISBN: ${book.isbn}</p>
       <button class="editBtn">Edit</button>
       <button class="deleteBtn">Delete</button>
     `;
 
-    li.querySelector(".editBtn").addEventListener("click", async () => {
+    // Edit
+    bookDiv.querySelector(".editBtn").addEventListener("click", async () => {
       const newName = prompt("Edit book name:", book.name);
       const newAuthor = prompt("Edit author:", book.author || "");
       const newGenre = prompt("Edit genre:", book.genre || "");
       if (!newName) return;
-      await setDoc(doc(db, "users", uid, "books", docItem.id), {
+      await setDoc(doc(db, "users", userId, "books", docItem.id), {
         name: newName, author: newAuthor, isbn: book.isbn, cover: book.cover, genre: newGenre
       }, { merge: true });
       alert(`✏️ "${newName}" updated!`);
-      loadBooks(uid);
+      loadBooks(userId);
+      loadBooksByGenre(userId);
     });
 
-    li.querySelector(".deleteBtn").addEventListener("click", async () => {
+    // Delete
+    bookDiv.querySelector(".deleteBtn").addEventListener("click", async () => {
       if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
-        await deleteDoc(doc(db, "users", uid, "books", docItem.id));
+        await deleteDoc(doc(db, "users", userId, "books", docItem.id));
         alert(`🗑 "${book.name}" deleted!`);
-        loadBooks(uid);
+        loadBooks(userId);
+        loadBooksByGenre(userId);
       }
     });
 
-    allBooksTab.appendChild(li);
+    bookListDiv.appendChild(bookDiv);
   });
-  loadBooksByGenre();
 }
 
-// ---- Google Books Search ----
-searchBtn.addEventListener("click", async () => {
-  const query = searchTitle.value.trim();
-  if (!query) return alert("Enter a book name to search");
-  searchResultsDiv.innerHTML = "Searching...";
-
-  try {
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
-    const data = await response.json();
-    searchResultsDiv.innerHTML = "";
-    if (!data.items || data.items.length === 0) { searchResultsDiv.innerHTML = "No books found."; return; }
-
-    data.items.forEach(item => {
-      const book = item.volumeInfo;
-      const title = book.title || "Unknown title";
-      const authors = book.authors ? book.authors.join(", ") : "Unknown author";
-      const isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : "N/A";
-      const thumbnail = book.imageLinks ? book.imageLinks.thumbnail : "";
-
-      const div = document.createElement("div");
-      div.classList.add("search-item");
-      div.innerHTML = `
-        <strong>${title}</strong><br>
-        <em>${authors}</em><br>
-        ISBN: ${isbn}<br>
-        ${thumbnail ? `<img src="${thumbnail}" alt="cover">` : ""}<br>
-        <label>Genre:
-          <select class="genreSelect">
-            <option value="Fiction">Fiction</option>
-            <option value="Non-fiction">Non-fiction</option>
-            <option value="Science">Science</option>
-            <option value="History">History</option>
-            <option value="Fantasy">Fantasy</option>
-          </select>
-        </label><br>
-        <button class="addBtn">Add</button>
-      `;
-
-      div.querySelector(".addBtn").addEventListener("click", async () => {
-        const user = auth.currentUser;
-        if (!user) return alert("Login first!");
-        const selectedGenre = div.querySelector(".genreSelect").value || "Unknown";
-
-        await addDoc(collection(db, "users", user.uid, "books"), {
-          name: title, author: authors, isbn, cover: thumbnail, genre: selectedGenre
-        });
-        alert(`✅ "${title}" added to your library!`);
-        loadBooks(user.uid);
-      });
-
-      searchResultsDiv.appendChild(div);
-    });
-  } catch (error) { searchResultsDiv.innerHTML = "Error fetching books."; console.error(error); }
-});
-
-// ---- Tabs ----
-tabButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    tabButtons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    if (btn.dataset.tab === "all") { allBooksTab.classList.remove("hidden"); genreTab.classList.add("hidden"); }
-    else { allBooksTab.classList.add("hidden"); genreTab.classList.remove("hidden"); loadBooksByGenre(); }
-  });
-});
-
-// ---- Load Books By Genre ----
-async function loadBooksByGenre() {
-  const user = auth.currentUser;
-  if (!user) return;
-  const booksRef = collection(db, "users", user.uid, "books");
+// Load Books by Genre (Genre Tab)
+async function loadBooksByGenre(userId) {
+  const booksRef = collection(db, "users", userId, "books");
   const snapshot = await getDocs(booksRef);
 
-  const books = snapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
-  const genreMap = {};
-  books.forEach(book => {
+  const genres = {};
+  snapshot.forEach(docItem => {
+    const book = docItem.data();
     const genre = book.genre || "Unknown";
-    if (!genreMap[genre]) genreMap[genre] = [];
-    genreMap[genre].push(book);
+    if (!genres[genre]) genres[genre] = [];
+    genres[genre].push(book);
   });
 
   genreListDiv.innerHTML = "";
-  for (const [genre, booksArr] of Object.entries(genreMap)) {
+
+  for (const [genre, books] of Object.entries(genres)) {
     const genreDiv = document.createElement("div");
     genreDiv.innerHTML = `<h3>${genre}</h3>`;
-    booksArr.forEach(book => {
-      const bookDiv = document.createElement("div");
-      bookDiv.classList.add("genre-item");
-      bookDiv.innerHTML = `
-        <strong>${book.name}</strong><br>
-        <em>${book.author || "Unknown"}</em><br>
-        ISBN: ${book.isbn}<br>
-        ${book.cover ? `<img src="${book.cover}" alt="cover" style="height:120px;margin:5px;">` : ""}<br>
-        <button class="editBtn">Edit</button>
-        <button class="deleteBtn">Delete</button>
+    books.forEach(book => {
+      genreDiv.innerHTML += `
+        <div class="book-item">
+          ${book.cover ? `<img src="${book.cover}" alt="cover" style="height:120px;">` : ""}
+          <p><strong>${book.name}</strong> by ${book.author || "Unknown"}</p>
+        </div>
       `;
-
-      bookDiv.querySelector(".editBtn").addEventListener("click", async () => {
-        const newName = prompt("Edit book name:", book.name);
-        const newAuthor = prompt("Edit author:", book.author || "");
-        const newGenre = prompt("Edit genre:", book.genre || "");
-        if (!newName) return;
-        await setDoc(doc(db, "users", user.uid, "books", book.id), {
-          name: newName, author: newAuthor, isbn: book.isbn, cover: book.cover, genre: newGenre
-        }, { merge: true });
-        alert(`✏️ "${newName}" updated!`);
-        loadBooks(user.uid);
-      });
-
-      bookDiv.querySelector(".deleteBtn").addEventListener("click", async () => {
-        if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
-          await deleteDoc(doc(db, "users", user.uid, "books", book.id));
-          alert(`🗑 "${book.name}" deleted!`);
-          loadBooks(user.uid);
-        }
-      });
-
-      genreDiv.appendChild(bookDiv);
     });
     genreListDiv.appendChild(genreDiv);
   }
 }
+
+// ---------------- TAB SWITCHING -----------------
+libraryTab?.addEventListener("click", () => {
+  document.getElementById("library").style.display = "block";
+  document.getElementById("genres").style.display = "none";
+});
+
+genreTab?.addEventListener("click", () => {
+  document.getElementById("library").style.display = "none";
+  document.getElementById("genres").style.display = "block";
+});
