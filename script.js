@@ -13,7 +13,6 @@ import {
   addDoc, 
   getDocs,
   doc,
-  updateDoc,
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -102,19 +101,8 @@ async function loadBooks(uid) {
       <strong>${book.name}</strong><br>
       <em>${book.author || "Unknown author"}</em><br>
       ISBN: ${book.isbn}<br>
-      <button class="editBtn">Edit</button>
       <button class="deleteBtn">Delete</button>
     `;
-
-    // Edit
-    li.querySelector(".editBtn").addEventListener("click", async () => {
-      const newName = prompt("Enter new book title:", book.name) || book.name;
-      const newAuthor = prompt("Enter new author:", book.author || "") || book.author;
-      const newISBN = prompt("Enter new ISBN:", book.isbn) || book.isbn;
-      await updateDoc(doc(db, "users", uid, "books", docItem.id), { name: newName, author: newAuthor, isbn: newISBN });
-      alert(`✅ "${newName}" updated!`);
-      loadBooks(uid);
-    });
 
     // Delete
     li.querySelector(".deleteBtn").addEventListener("click", async () => {
