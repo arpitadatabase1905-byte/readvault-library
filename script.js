@@ -43,15 +43,12 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
 // Library inputs
-const bookNameInput = document.getElementById("bookName");
-const isbnInput = document.getElementById("isbn");
-const addBookBtn = document.getElementById("addBookBtn");
 const bookList = document.getElementById("bookList");
 
 // Search inputs
 const searchTitle = document.getElementById("searchTitle");
-const searchISBN = document.getElementById("searchISBN");
 const searchBtn = document.getElementById("searchBtn");
+const searchResultsDiv = document.getElementById("searchResults");
 
 // ---- SIGN UP ----
 signupBtn.addEventListener("click", async () => {
@@ -107,29 +104,7 @@ onAuthStateChanged(auth, (user) => {
     authSection.classList.remove("hidden");
     librarySection.classList.add("hidden");
     bookList.innerHTML = "";
-  }
-});
-
-// ---- ADD BOOK ----
-addBookBtn.addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user) return alert("Login first!");
-
-  const name = bookNameInput.value.trim();
-  const isbn = isbnInput.value.trim();
-
-  if (!name || !isbn) return alert("Enter both book name and ISBN");
-
-  try {
-    await addDoc(collection(db, "users", user.uid, "books"), {
-      name: name,
-      isbn: isbn
-    });
-    bookNameInput.value = "";
-    isbnInput.value = "";
-    loadBooks(user.uid);
-  } catch (error) {
-    alert(error.message);
+    searchResultsDiv.innerHTML = "";
   }
 });
 
@@ -142,33 +117,69 @@ async function loadBooks(uid) {
   snapshot.forEach((doc) => {
     const book = doc.data();
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${book.name}</strong><br>ISBN: ${book.isbn}`;
+    li.innerHTML = `
+      <strong>${book.name}</strong><br>
+      <em>${book.author || "Unknown author"}</em><br>
+      ISBN: ${book.isbn}<br>
+      ${book.cover ? `<img src="${book.cover}" alt="cover">` : ""}
+    `;
     bookList.appendChild(li);
   });
 }
 
-// ---- SEARCH BOOKS ----
+// ---- GOOGLE BOOKS SEARCH ----
 searchBtn.addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user) return alert("Login first!");
+  const query = searchTitle.value.trim();
+  if (!query) return alert("Enter a book name to search");
 
-  const title = searchTitle.value.trim().toLowerCase();
-  const isbn = searchISBN.value.trim();
+  searchResultsDiv.innerHTML = "Searching...";
 
-  bookList.innerHTML = "";
-  const booksRef = collection(db, "users", user.uid, "books");
-  const snapshot = await getDocs(booksRef);
+  try {
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    searchResultsDiv.innerHTML = ""; // clear previous results
 
-  snapshot.forEach((doc) => {
-    const book = doc.data();
-    let match = true;
-    if (title && !book.name.toLowerCase().includes(title)) match = false;
-    if (isbn && book.isbn !== isbn) match = false;
-
-    if (match) {
-      const li = document.createElement("li");
-      li.innerHTML = `<strong>${book.name}</strong><br>ISBN: ${book.isbn}`;
-      bookList.appendChild(li);
+    if (!data.items || data.items.length === 0) {
+      searchResultsDiv.innerHTML = "No books found.";
+      return;
     }
-  });
+
+    data.items.forEach(item => {
+      const book = item.volumeInfo;
+      const title = book.title || "Unknown title";
+      const authors = book.authors ? book.authors.join(", ") : "Unknown author";
+      const isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : "N/A";
+      const thumbnail = book.imageLinks ? book.imageLinks.thumbnail : "";
+
+      const div = document.createElement("div");
+      div.classList.add("search-item");
+      div.innerHTML = `
+        <strong>${title}</strong><br>
+        <em>${authors}</em><br>
+        ISBN: ${isbn}<br>
+        ${thumbnail ? `<img src="${thumbnail}" alt="cover">` : ""}<br>
+        <button class="addBtn">Add</button>
+      `;
+
+      const addBtn = div.querySelector(".addBtn");
+      addBtn.addEventListener("click", async () => {
+        const user = auth.currentUser;
+        if (!user) return alert("Login first!");
+
+        await addDoc(collection(db, "users", user.uid, "books"), {
+          name: title,
+          author: authors,
+          isbn: isbn,
+          cover: thumbnail
+        });
+        alert(`✅ "${title}" added to your library!`);
+        loadBooks(user.uid);
+      });
+
+      searchResultsDiv.appendChild(div);
+    });
+  } catch (error) {
+    searchResultsDiv.innerHTML = "Error fetching books.";
+    console.error(error);
+  }
 });

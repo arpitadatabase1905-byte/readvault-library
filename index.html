@@ -13,14 +13,14 @@
       display: none;
     }
 
-    #bookList {
+    #bookList, #searchResults {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
       padding: 0;
     }
 
-    #bookList li {
+    #bookList li, .search-item {
       list-style: none;
       width: 150px;
       text-align: center;
@@ -30,7 +30,7 @@
       background: #f9f9f9;
     }
 
-    #bookList img {
+    #bookList img, .search-item img {
       height: 180px;
       margin-bottom: 10px;
     }
@@ -44,6 +44,11 @@
     button {
       padding: 5px 10px;
       margin-top: 5px;
+      cursor: pointer;
+    }
+
+    hr {
+      border: 0.5px solid #ccc;
     }
   </style>
 </head>
@@ -64,21 +69,16 @@
     <button id="loginBtn">Login</button>
   </div>
 
-  <!-- 🔹 Main library section (hidden until logged in) -->
+  <!-- 🔹 Main library section -->
   <div id="librarySection" class="hidden">
     <!-- Search bar -->
     <div class="search-bar">
       <input type="text" id="searchTitle" placeholder="Book Name">
-      <input type="text" id="searchISBN" placeholder="ISBN">
       <button id="searchBtn">Search</button>
     </div>
 
-    <!-- Add book -->
-    <div class="add-book">
-      <input type="text" id="bookName" placeholder="Enter book name">
-      <input type="text" id="isbn" placeholder="Enter ISBN code">
-      <button id="addBookBtn">Add to My Library</button>
-    </div>
+    <!-- Search results -->
+    <div id="searchResults"></div>
 
     <h2>📖 My Library</h2>
     <ul id="bookList"></ul>
