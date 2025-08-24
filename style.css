@@ -23,17 +23,20 @@ header h1 {
   color: #444;
 }
 
-/* ===== Tabs ===== */
+/* ===== Tabs (new) ===== */
 .tabs {
   display: flex;
   justify-content: center;
-  margin-top: 10px;
+  margin: 0 auto;
   border-bottom: 2px solid #ddd;
   background: #fff;
+  max-width: 1000px; /* aligns with your rectangle */
+  border-radius: 10px 10px 0 0;
 }
 
 .tab-btn {
-  padding: 12px 20px;
+  flex: 1;
+  padding: 12px 0;
   cursor: pointer;
   background: none;
   border: none;
@@ -42,7 +45,7 @@ header h1 {
 }
 
 .tab-btn:hover {
-  background: #eee;
+  background: #f4f4f4;
 }
 
 .tab-btn.active {
@@ -54,24 +57,23 @@ header h1 {
 /* ===== Tab Content ===== */
 .tab-content {
   display: none;
-  padding: 20px;
 }
 
 .tab-content.active {
   display: block;
 }
 
-/* ===== Library Container ===== */
+/* ===== Library Rectangle (unchanged) ===== */
 .library-container {
   max-width: 1000px;
-  margin: 20px auto;
+  margin: 0 auto 20px;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 0 0 10px 10px; /* connects smoothly with tabs */
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== Search Bar ===== */
+/* ===== Search Bar (unchanged) ===== */
 .search-container {
   display: flex;
   justify-content: center;
@@ -86,7 +88,7 @@ header h1 {
   font-size: 1rem;
 }
 
-/* ===== Book Grid ===== */
+/* ===== Book Grid (unchanged) ===== */
 .book-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -125,7 +127,7 @@ header h1 {
   color: #555;
 }
 
-/* ===== Buttons ===== */
+/* ===== Buttons (unchanged) ===== */
 .book-card button {
   margin: 5px;
   padding: 6px 12px;
