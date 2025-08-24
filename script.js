@@ -7,6 +7,7 @@ import {
   signOut, 
   onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 import { 
   getFirestore, 
   collection, 
@@ -117,21 +118,28 @@ async function loadBooks(uid) {
     `;
 
     // ---- Edit Button ----
-    li.querySelector(".editBtn").addEventListener("click", async () => {
-      const newName = prompt("Enter new book title:", book.name);
-      const newAuthor = prompt("Enter new author:", book.author || "Unknown author");
-      const newISBN = prompt("Enter new ISBN:", book.isbn);
+li.querySelector(".editBtn").addEventListener("click", async () => {
+  const newName = prompt("Enter new book title:", book.name);
+  const newAuthor = prompt("Enter new author:", book.author || "Unknown author");
+  const newISBN = prompt("Enter new ISBN:", book.isbn);
 
-      if (newName && newAuthor && newISBN) {
-        await updateDoc(doc(db, "users", uid, "books", docItem.id), {
-          name: newName,
-          author: newAuthor,
-          isbn: newISBN
-        });
-        alert(`✏️ "${newName}" updated!`);
-        loadBooks(uid);
-      }
-    });
+  if (newName && newAuthor && newISBN) {
+    try {
+      const bookRef = doc(db, "users", uid, "books", docItem.id);
+      await updateDoc(bookRef, {
+        name: newName,
+        author: newAuthor,
+        isbn: newISBN
+      });
+      alert(`✏️ "${newName}" updated!`);
+      loadBooks(uid);
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert("❌ Failed to update book: " + err.message);
+    }
+  }
+});
+
 
     // ---- Delete Button ----
     li.querySelector(".deleteBtn").addEventListener("click", async () => {
