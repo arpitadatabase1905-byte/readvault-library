@@ -3,75 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>My Online Library</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-    }
-
-    #loginSection, #logoutSection {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    #bookList {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 15px;
-    }
-
-    .book-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      border: 1px solid #ddd;
-      padding: 10px;
-      border-radius: 8px;
-      background: #fff;
-      box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-    }
-
-    .book-cover {
-      width: 100px;
-      height: auto;
-      border-radius: 4px;
-      margin-bottom: 10px;
-    }
-
-    .book-title {
-      font-weight: bold;
-      margin: 5px 0;
-    }
-
-    .book-author, .book-isbn {
-      font-size: 0.9em;
-      margin: 2px 0;
-      color: #555;
-    }
-
-    .book-actions {
-      margin-top: 10px;
-    }
-
-    .book-actions button {
-      margin: 0 5px;
-      padding: 4px 8px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background: #007bff;
-      color: #fff;
-    }
-
-    .book-actions button.deleteBtn {
-      background: #dc3545;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>📚 My Online Library</h1>
