@@ -1,103 +1,104 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f4f6f9;
+  background: #eef6fb;
   padding: 20px;
+  color: #333;
 }
 
-h1 {
-  text-align: center;
+h1 { text-align: center; color: #1a73e8; margin-top: 10px; }
+p { text-align: center; color: #555; margin-bottom: 20px; }
+
+.hidden { display: none; }
+
+#authSection, #librarySection {
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 }
 
-#loginSection, #logoutSection {
-  text-align: center;
-  margin-bottom: 20px;
+input, button {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  font-size: 14px;
 }
+
+button { cursor: pointer; transition: 0.2s; }
 
 #bookList, #searchResults {
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* 3 books per row */
-  gap: 15px;
-  justify-items: center;
+  gap: 20px;
   padding: 0;
   list-style: none;
+  justify-items: center;
 }
 
 .book-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-  text-align: center;
   width: 180px; /* consistent width */
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  text-align: center;
 }
 
 .book-cover {
   width: 100%;
-  height: auto; /* maintain aspect ratio */
-  border-radius: 4px;
-  margin-bottom: 10px;
+  height: auto; /* dynamic height to fit cover */
+  margin-bottom: 8px;
+  border-radius: 8px;
+  object-fit: contain; /* ensures no image cut-off */
 }
 
-.book-title {
-  font-weight: bold;
-  margin: 5px 0;
-}
-
-.book-author, .book-isbn {
-  font-size: 0.9em;
-  margin: 2px 0;
-  color: #555;
-}
+.book-title { font-weight: bold; margin: 5px 0; }
+.book-author, .book-isbn { font-size: 0.9em; margin: 2px 0; color: #555; }
 
 .book-actions {
   margin-top: auto;
   display: flex;
-  justify-content: center;
   gap: 5px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .book-actions button {
-  padding: 4px 8px;
+  padding: 5px 10px;
+  border-radius: 6px;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background: #007bff;
+  font-weight: bold;
   color: #fff;
-  font-size: 0.85em;
+  cursor: pointer;
 }
 
-.book-actions button.deleteBtn {
-  background: #dc3545;
-}
+.editBtn { background: #f0ad4e; }
+.editBtn:hover { background: #f5b95c; }
+.deleteBtn { background: #d9534f; }
+.deleteBtn:hover { background: #e06b6a; }
+.addBtn { background: #5cb85c; }
+.addBtn:hover { background: #72c372; }
 
 #logoutBtn {
-  display: block;
-  margin: 20px auto;
-  padding: 10px 20px;
   background: #1a73e8;
   color: #fff;
-  border: none;
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
   border-radius: 6px;
-  cursor: pointer;
 }
-
-#logoutBtn:hover {
-  background: #4285f4;
-}
+#logoutBtn:hover { background: #4285f4; }
 
 /* Responsive */
-@media (max-width: 800px) {
-  #bookList, #searchResults {
-    grid-template-columns: repeat(2, 1fr);
-  }
+@media (max-width: 900px) {
+  #bookList, #searchResults { grid-template-columns: repeat(2, 1fr); }
 }
-
-@media (max-width: 500px) {
-  #bookList, #searchResults {
-    grid-template-columns: repeat(1, 1fr);
-  }
+@media (max-width: 600px) {
+  #bookList, #searchResults { grid-template-columns: repeat(1, 1fr); }
 }
