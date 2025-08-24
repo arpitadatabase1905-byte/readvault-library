@@ -5,34 +5,21 @@ body {
   color: #333;
 }
 
-h1 { text-align: center; color: #1a73e8; margin-top: 10px; }
-p { text-align: center; color: #555; margin-bottom: 20px; }
-
-.hidden { display: none; }
-
-#authSection, #librarySection {
-  max-width: 700px;
-  margin: 20px auto;
-  padding: 25px;
-  background: #fff;
-  border-radius: 15px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+h1 {
+  text-align: center;
+  color: #1a73e8;
+  margin-top: 10px;
 }
 
-input, button {
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-  font-size: 14px;
+#loginSection, #logoutSection {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-button { cursor: pointer; transition: 0.2s; }
-
-#bookList, #searchResults {
+#bookList {
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* 3 books per row */
-  gap: 20px;
+  gap: 20px; /* space between books */
   padding: 0;
   list-style: none;
   justify-items: center;
@@ -42,31 +29,39 @@ button { cursor: pointer; transition: 0.2s; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 180px; /* consistent width */
+  width: 220px; /* consistent width */
+  height: 360px; /* consistent height */
   background: #fff;
   border-radius: 12px;
   padding: 12px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   text-align: center;
+  justify-content: space-between; /* spaces out content evenly */
 }
 
 .book-cover {
   width: 100%;
-  height: auto; /* dynamic height to fit cover */
+  height: 180px; /* fixed height for images */
+  object-fit: contain; /* ensures image fits without cropping */
   margin-bottom: 8px;
   border-radius: 8px;
-  object-fit: contain; /* ensures no image cut-off */
 }
 
-.book-title { font-weight: bold; margin: 5px 0; }
-.book-author, .book-isbn { font-size: 0.9em; margin: 2px 0; color: #555; }
+.book-title {
+  font-weight: bold;
+  margin: 5px 0;
+}
+
+.book-author, .book-isbn {
+  font-size: 0.9em;
+  margin: 2px 0;
+  color: #555;
+}
 
 .book-actions {
-  margin-top: auto;
   display: flex;
-  gap: 5px;
   justify-content: center;
-  flex-wrap: wrap;
+  gap: 5px;
 }
 
 .book-actions button {
@@ -80,25 +75,14 @@ button { cursor: pointer; transition: 0.2s; }
 
 .editBtn { background: #f0ad4e; }
 .editBtn:hover { background: #f5b95c; }
-.deleteBtn { background: #d9534f; }
-.deleteBtn:hover { background: #e06b6a; }
-.addBtn { background: #5cb85c; }
-.addBtn:hover { background: #72c372; }
 
-#logoutBtn {
-  background: #1a73e8;
-  color: #fff;
-  width: 100%;
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 6px;
-}
-#logoutBtn:hover { background: #4285f4; }
+.deleteBtn { background: #dc3545; }
+.deleteBtn:hover { background: #e06b6a; }
 
 /* Responsive */
 @media (max-width: 900px) {
-  #bookList, #searchResults { grid-template-columns: repeat(2, 1fr); }
+  #bookList { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
-  #bookList, #searchResults { grid-template-columns: repeat(1, 1fr); }
+  #bookList { grid-template-columns: repeat(1, 1fr); }
 }
