@@ -126,6 +126,23 @@ async function loadBooks(uid) {
   });
 }
 
+// ... Firebase imports and initialization (same as before) ...
+
+const profileToggle = document.getElementById("profileToggle");
+const profileSection = document.getElementById("profileSection");
+
+// Toggle Profile Panel
+profileToggle.addEventListener("click", () => {
+  if(profileSection.style.display === "none" || !profileSection.style.display){
+    profileSection.style.display = "block";
+  } else {
+    profileSection.style.display = "none";
+  }
+});
+
+// The rest of your JS (signup, login, logout, auth state, search, add books, load books, save profile) remains same
+
+
 // GOOGLE BOOKS SEARCH
 searchBtn.addEventListener("click", async () => {
   const query = searchTitle.value.trim();
