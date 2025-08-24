@@ -19,13 +19,45 @@
       margin-bottom: 20px;
     }
 
-    #bookList {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    #searchSection {
+      text-align: center;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    #searchSection input {
+      padding: 6px 10px;
+      font-size: 14px;
+      width: 200px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    #searchSection button {
+      padding: 6px 10px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: none;
+      background: #1a73e8;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #searchSection button:hover {
+      background: #4285f4;
+    }
+
+    #bookList, #searchResults {
+      display: flex;
+      flex-wrap: wrap;
       gap: 15px;
+      justify-content: center;
+      padding: 0;
+      list-style: none;
     }
 
     .book-card {
+      flex: 0 1 calc(33.33% - 20px); /* 3 per row */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -34,11 +66,13 @@
       border-radius: 8px;
       background: #fff;
       box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
     }
 
     .book-cover {
       width: 100px;
-      height: auto;
+      height: 120px;
+      object-fit: cover;
       border-radius: 4px;
       margin-bottom: 10px;
     }
@@ -55,21 +89,51 @@
     }
 
     .book-actions {
-      margin-top: 10px;
+      margin-top: auto;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
     }
 
     .book-actions button {
-      margin: 0 5px;
       padding: 4px 8px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       background: #007bff;
       color: #fff;
+      font-size: 0.85em;
     }
 
     .book-actions button.deleteBtn {
       background: #dc3545;
+    }
+
+    #logoutBtn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #logoutBtn:hover {
+      background: #4285f4;
+    }
+
+    @media (max-width: 800px) {
+      .book-card {
+        flex: 0 1 calc(50% - 20px);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .book-card {
+        flex: 0 1 calc(100% - 20px);
+      }
     }
   </style>
 </head>
@@ -85,26 +149,32 @@
     <button id="logoutBtn">Logout</button>
   </div>
 
+  <!-- Search Section -->
+  <div id="searchSection">
+    <input type="text" id="searchTitle" placeholder="Search book by title">
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <!-- Search Results -->
+  <ul id="searchResults"></ul>
+
   <!-- Book List -->
   <ul id="bookList"></ul>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK + JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } 
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } 
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // ---- Firebase Config ----
     const firebaseConfig = {
-  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
-  authDomain: "readvault-58040.firebaseapp.com",
-  projectId: "readvault-58040",
-  storageBucket: "readvault-58040.appspot.com",
-  messagingSenderId: "735101113966",
-  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
-};
+      apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
+      authDomain: "readvault-58040.firebaseapp.com",
+      projectId: "readvault-58040",
+      storageBucket: "readvault-58040.appspot.com",
+      messagingSenderId: "735101113966",
+      appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -117,46 +187,46 @@
     const logoutSection = document.getElementById("logoutSection");
     const userName = document.getElementById("userName");
     const bookList = document.getElementById("bookList");
+    const searchSection = document.getElementById("searchSection");
+    const searchTitle = document.getElementById("searchTitle");
+    const searchBtn = document.getElementById("searchBtn");
+    const searchResults = document.getElementById("searchResults");
 
     let currentUser = null;
 
-    // ---- Login ----
-    loginBtn.addEventListener("click", async () => {
-      await signInWithPopup(auth, provider);
-    });
+    loginBtn.addEventListener("click", async () => { await signInWithPopup(auth, provider); });
+    logoutBtn.addEventListener("click", async () => { await signOut(auth); });
 
-    // ---- Logout ----
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-    });
-
-    // ---- Auth State ----
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
         loginSection.style.display = "none";
         logoutSection.style.display = "block";
+        searchSection.style.display = "block";
         userName.textContent = user.displayName;
         loadBooks(user.uid);
       } else {
         currentUser = null;
         loginSection.style.display = "block";
         logoutSection.style.display = "none";
+        searchSection.style.display = "none";
         bookList.innerHTML = "";
+        searchResults.innerHTML = "";
       }
     });
 
-    // ---- Load Books ----
+    // ---- Load Library Books ----
     async function loadBooks(uid) {
       bookList.innerHTML = "";
       const querySnapshot = await getDocs(collection(db, "users", uid, "books"));
-      querySnapshot.forEach((docItem) => {
-        const book = docItem.data();
+      const books = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      books.sort((a, b) => a.name.localeCompare(b.name));
 
+      books.forEach(book => {
         const li = document.createElement("li");
         li.innerHTML = `
           <div class="book-card">
-            <img src="${book.cover || 'https://via.placeholder.com/100'}" alt="cover" class="book-cover">
+            <img src="${book.cover || 'https://via.placeholder.com/100'}" class="book-cover">
             <p class="book-title">${book.name}</p>
             <p class="book-author">by ${book.author || "Unknown"}</p>
             <p class="book-isbn">ISBN: ${book.isbn}</p>
@@ -166,41 +236,85 @@
             </div>
           </div>
         `;
-
-        // ---- Edit ----
         li.querySelector(".editBtn").addEventListener("click", async () => {
           const newName = prompt("Enter new book title:", book.name);
           const newAuthor = prompt("Enter new author:", book.author || "Unknown");
           const newISBN = prompt("Enter new ISBN:", book.isbn);
-
           if (newName && newAuthor && newISBN) {
-            try {
-              const bookRef = doc(db, "users", uid, "books", docItem.id);
-              await updateDoc(bookRef, {
-                name: newName,
-                author: newAuthor,
-                isbn: newISBN
-              });
-              alert(`✏️ "${newName}" updated!`);
-              loadBooks(uid);
-            } catch (err) {
-              console.error("Update failed:", err);
-              alert("❌ Failed to update: " + err.message);
-            }
-          }
-        });
-
-        // ---- Delete ----
-        li.querySelector(".deleteBtn").addEventListener("click", async () => {
-          if (confirm(`Delete "${book.name}"?`)) {
-            await deleteDoc(doc(db, "users", uid, "books", docItem.id));
-            alert(`🗑️ "${book.name}" deleted!`);
+            const bookRef = doc(db, "users", uid, "books", book.id);
+            await updateDoc(bookRef, { name: newName, author: newAuthor, isbn: newISBN });
             loadBooks(uid);
           }
         });
-
+        li.querySelector(".deleteBtn").addEventListener("click", async () => {
+          if(confirm(`Delete "${book.name}"?`)){
+            await deleteDoc(doc(db, "users", uid, "books", book.id));
+            loadBooks(uid);
+          }
+        });
         bookList.appendChild(li);
       });
+      equalizeCardHeights("bookList");
+    }
+
+    // ---- Google Books Search ----
+    searchBtn.addEventListener("click", async () => {
+      const query = searchTitle.value.trim();
+      if (!query) return alert("Enter a book name!");
+      searchResults.innerHTML = "Searching...";
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        searchResults.innerHTML = "";
+        if (!data.items || data.items.length === 0) { searchResults.innerHTML="No books found."; return; }
+        data.items.forEach(item => {
+          const book = item.volumeInfo;
+          const title = book.title || "Unknown";
+          const authors = book.authors ? book.authors.join(", ") : "Unknown";
+          const isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : "N/A";
+          const thumbnail = book.imageLinks ? book.imageLinks.thumbnail : "https://via.placeholder.com/100";
+
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <div class="book-card">
+              <img src="${thumbnail}" class="book-cover">
+              <p class="book-title">${title}</p>
+              <p class="book-author">by ${authors}</p>
+              <p class="book-isbn">ISBN: ${isbn}</p>
+              <div class="book-actions">
+                <button class="addBtn">➕ Add</button>
+              </div>
+            </div>
+          `;
+          li.querySelector(".addBtn").addEventListener("click", async () => {
+            if(!currentUser) return alert("Login first!");
+            await addDoc(collection(db, "users", currentUser.uid, "books"), {
+              name: title,
+              author: authors,
+              isbn: isbn,
+              cover: thumbnail
+            });
+            alert(`"${title}" added to your library!`);
+            loadBooks(currentUser.uid);
+          });
+          searchResults.appendChild(li);
+        });
+        equalizeCardHeights("searchResults");
+      } catch(err) {
+        console.error(err);
+        searchResults.innerHTML = "Error fetching books.";
+      }
+    });
+
+    // ---- Equal heights ----
+    function equalizeCardHeights(containerId){
+      const cards = Array.from(document.querySelectorAll(`#${containerId} .book-card`));
+      for(let c of cards) c.style.height = "auto";
+      for(let i=0;i<cards.length;i+=3){
+        const row = cards.slice(i,i+3);
+        const maxH = Math.max(...row.map(c=>c.offsetHeight));
+        row.forEach(c=>c.style.height = maxH + "px");
+      }
     }
   </script>
 </body>
