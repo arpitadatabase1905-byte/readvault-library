@@ -1,157 +1,89 @@
-/* ===== Global Reset ===== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 body {
   font-family: Arial, sans-serif;
-  background-color: #f4f6f8;
+  background: #eef6fb;
+  padding: 20px;
   color: #333;
-  line-height: 1.6;
 }
 
-/* ===== Header ===== */
-header {
+h1 {
   text-align: center;
-  padding: 20px;
+  color: #1a73e8;
 }
 
-header h1 {
-  font-size: 2rem;
-  color: #444;
-}
-
-/* ===== Tabs (new) ===== */
-.tabs {
-  display: flex;
-  justify-content: center;
-  margin: 0 auto;
-  border-bottom: 2px solid #ddd;
-  background: #fff;
-  max-width: 1000px; /* aligns with your rectangle */
-  border-radius: 10px 10px 0 0;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 12px 0;
-  cursor: pointer;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.tab-btn:hover {
-  background: #f4f4f4;
-}
-
-.tab-btn.active {
-  border-bottom: 3px solid #007bff;
-  font-weight: bold;
-  color: #007bff;
-}
-
-/* ===== Tab Content ===== */
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-/* ===== Library Rectangle (unchanged) ===== */
-.library-container {
-  max-width: 1000px;
-  margin: 0 auto 20px;
-  background: #fff;
-  border-radius: 0 0 10px 10px; /* connects smoothly with tabs */
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* ===== Search Bar (unchanged) ===== */
-.search-container {
-  display: flex;
-  justify-content: center;
+#loginSection, #logoutSection {
+  text-align: center;
   margin-bottom: 20px;
 }
 
-.search-container input {
-  width: 60%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
-}
-
-/* ===== Book Grid (unchanged) ===== */
-.book-list {
+#bookList {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  padding: 0;
+  list-style: none;
+  justify-items: center;
 }
 
 .book-card {
-  background: #fafafa;
-  border-radius: 8px;
-  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 220px;
+  height: 360px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease;
+  justify-content: space-between;
 }
 
-.book-card:hover {
-  transform: translateY(-5px);
-}
-
-.book-card img {
+.book-cover {
   width: 100%;
-  height: auto;
-  max-height: 250px;
+  height: 180px;
   object-fit: contain;
-  border-radius: 4px;
+  margin-bottom: 8px;
+  border-radius: 8px;
 }
 
-.book-card h3 {
-  margin: 10px 0 5px;
-  font-size: 1.1rem;
-  color: #222;
-}
+.book-title { font-weight: bold; margin: 5px 0; }
+.book-author, .book-isbn { font-size: 0.9em; margin: 2px 0; color: #555; }
 
-.book-card p {
-  font-size: 0.9rem;
-  color: #555;
-}
+.book-actions { display: flex; justify-content: center; gap: 5px; }
+.book-actions button { padding: 5px 10px; border-radius: 6px; border: none; font-weight: bold; color: #fff; cursor: pointer; }
+.editBtn { background: #f0ad4e; } .editBtn:hover { background: #f5b95a; }
+.deleteBtn { background: #dc3545; } .deleteBtn:hover { background: #e66a6a; }
 
-/* ===== Buttons (unchanged) ===== */
-.book-card button {
-  margin: 5px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background 0.3s;
-}
+.search-bar { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+.search-bar input { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; width: 300px; }
+.search-bar button { padding: 8px 12px; border-radius: 6px; border: none; background: #1a73e8; color: white; cursor: pointer; font-weight: bold; }
+.search-bar button:hover { background: #4285f4; }
 
-.book-card .editBtn {
-  background: #ffc107;
-  color: #fff;
-}
+#searchResults { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
+.search-item { background: #fff; border-radius: 8px; padding: 10px; width: 200px; text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+.search-item button { margin-top: 5px; padding: 5px 8px; border-radius: 6px; border: none; background: #28a745; color: white; cursor: pointer; font-weight: bold; }
+.search-item button:hover { background: #45c266; }
 
-.book-card .editBtn:hover {
-  background: #e0a800;
-}
+ 
+FIREBASE.JS
+// Import Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-.book-card .deleteBtn {
-  background: #dc3545;
-  color: #fff;
-}
+// ✅ Your Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
+  authDomain: "readvault-58040.firebaseapp.com",
+  projectId: "readvault-58040",
+  storageBucket: "readvault-58040.appspot.com",
+  messagingSenderId: "735101113966",
+  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
+};
 
-.book-card .deleteBtn:hover {
-  background: #c82333;
-}
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+export { db };
+
+
