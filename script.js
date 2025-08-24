@@ -1,9 +1,8 @@
-// ---- Firebase Setup ----
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ---- Firebase Config ----
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
   authDomain: "readvault-58040.firebaseapp.com",
@@ -13,12 +12,11 @@ const firebaseConfig = {
   appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
 };
 
-// ---- Initialize Firebase ----
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ---- DOM Elements ----
+// DOM Elements
 const authSection = document.getElementById("authSection");
 const librarySection = document.getElementById("librarySection");
 const bookList = document.getElementById("bookList");
@@ -34,15 +32,7 @@ const signupBtn = document.getElementById("signupBtn");
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
-// Profile
-const profileToggle = document.getElementById("profileToggle");
-const profileSection = document.getElementById("profileSection");
-const profileName = document.getElementById("profileName");
-const profileBio = document.getElementById("profileBio");
-const profileEmail = document.getElementById("profileEmail");
-const saveProfileBtn = document.getElementById("saveProfileBtn");
-
-// ---- Signup ----
+// Signup
 signupBtn.addEventListener("click", async () => {
   const email = signupEmail.value.trim();
   const password = signupPassword.value.trim();
@@ -50,22 +40,14 @@ signupBtn.addEventListener("click", async () => {
 
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const userRef = doc(db, "users", userCredential.user.uid);
-    await setDoc(userRef, {
-      email: email,
-      displayName: "",
-      bio: "",
-      createdAt: serverTimestamp()
-    });
+    await setDoc(doc(db, "users", userCredential.user.uid), { email });
     alert("✅ Signup successful!");
     signupEmail.value = "";
     signupPassword.value = "";
-  } catch (error) {
-    alert("❌ " + error.message);
-  }
+  } catch (error) { alert("❌ " + error.message); }
 });
 
-// ---- Login ----
+// Login
 loginBtn.addEventListener("click", async () => {
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
@@ -76,65 +58,34 @@ loginBtn.addEventListener("click", async () => {
     alert("✅ Logged in!");
     loginEmail.value = "";
     loginPassword.value = "";
-  } catch (error) {
-    alert("❌ " + error.message);
-  }
+  } catch (error) { alert("❌ " + error.message); }
 });
 
-// ---- Logout ----
+// Logout
 logoutBtn.addEventListener("click", async () => {
   await signOut(auth);
   alert("🚪 Logged out!");
 });
 
-// ---- Auth State ----
+// Auth state
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     authSection.classList.add("hidden");
     librarySection.classList.remove("hidden");
-    profileEmail.textContent = user.email;
     await loadBooks(user.uid);
-    await loadProfile(user.uid);
   } else {
     authSection.classList.remove("hidden");
     librarySection.classList.add("hidden");
     bookList.innerHTML = "";
     searchResultsDiv.innerHTML = "";
-    profileSection.classList.add("hidden");
   }
 });
 
-// ---- Profile Toggle ----
-profileToggle.addEventListener("click", () => {
-  profileSection.classList.toggle("hidden");
-});
-
-// ---- Load Profile ----
-async function loadProfile(uid) {
-  const docSnap = await getDoc(doc(db, "users", uid));
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    profileName.value = data.displayName || "";
-    profileBio.value = data.bio || "";
-  }
-}
-
-// ---- Save Profile ----
-saveProfileBtn.addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user) return alert("Login first!");
-  await setDoc(doc(db, "users", user.uid), {
-    displayName: profileName.value.trim(),
-    bio: profileBio.value.trim()
-  }, { merge: true });
-  alert("✅ Profile saved successfully!");
-});
-
-// ---- Books ----
+// Load books
 async function loadBooks(uid) {
   bookList.innerHTML = "";
-  const booksSnap = await getDocs(collection(db, "users", uid, "books"));
-  booksSnap.forEach(docItem => {
+  const snapshot = await getDocs(collection(db, "users", uid, "books"));
+  snapshot.forEach(docItem => {
     const book = docItem.data();
     const li = document.createElement("li");
     li.innerHTML = `
@@ -147,11 +98,9 @@ async function loadBooks(uid) {
     `;
     li.querySelector(".editBtn").addEventListener("click", async () => {
       const newName = prompt("Edit book name:", book.name);
-      const newAuthor = prompt("Edit author name:", book.author || "");
+      const newAuthor = prompt("Edit author:", book.author || "");
       if (!newName) return;
-      await setDoc(doc(db, "users", uid, "books", docItem.id), {
-        name: newName, author: newAuthor, isbn: book.isbn, cover: book.cover
-      }, { merge: true });
+      await setDoc(doc(db, "users", uid, "books", docItem.id), { name: newName, author: newAuthor, isbn: book.isbn, cover: book.cover }, { merge: true });
       alert(`✏️ "${newName}" updated!`);
       loadBooks(uid);
     });
@@ -166,7 +115,7 @@ async function loadBooks(uid) {
   });
 }
 
-// ---- Search & Add Books ----
+// Search & add books
 searchBtn.addEventListener("click", async () => {
   const query = searchTitle.value.trim();
   if (!query) return alert("Enter a book name");
