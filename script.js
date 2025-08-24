@@ -126,7 +126,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ---- Load Books ----
+// ---- LOAD BOOKS ----
 async function loadBooks(uid) {
   bookList.innerHTML = "";
   const booksRef = collection(db, "users", uid, "books");
@@ -140,11 +140,28 @@ async function loadBooks(uid) {
       <em>${book.author || "Unknown author"}</em><br>
       ISBN: ${book.isbn}<br>
       ${book.cover ? `<img src="${book.cover}" alt="cover">` : ""}<br>
+      <button class="editBtn">Edit</button>
       <button class="deleteBtn">Delete</button>
     `;
 
-    const deleteBtn = li.querySelector(".deleteBtn");
-    deleteBtn.addEventListener("click", async () => {
+    // ---- Edit Book ----
+    li.querySelector(".editBtn").addEventListener("click", () => {
+      const newName = prompt("Edit book name:", book.name);
+      const newAuthor = prompt("Edit author name:", book.author || "");
+      if (!newName) return;
+      setDoc(doc(db, "users", uid, "books", docItem.id), {
+        name: newName,
+        author: newAuthor,
+        isbn: book.isbn,
+        cover: book.cover
+      }, { merge: true }).then(() => {
+        alert(`✏️ "${newName}" updated!`);
+        loadBooks(uid);
+      });
+    });
+
+    // ---- Delete Book ----
+    li.querySelector(".deleteBtn").addEventListener("click", async () => {
       if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
         await deleteDoc(doc(db, "users", uid, "books", docItem.id));
         alert(`🗑 "${book.name}" deleted!`);
