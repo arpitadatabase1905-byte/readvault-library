@@ -1,82 +1,180 @@
-import { db } from "./firebase.js";
-import {
-  collection,
+// ---- Firebase Setup ----
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
   getDocs,
   doc,
-  updateDoc,
   deleteDoc
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const libraryDiv = document.getElementById("library");
-const searchInput = document.getElementById("searchInput");
-const searchResults = document.getElementById("searchResults");
-
-async function loadLibrary() {
-  libraryDiv.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "books"));
-  querySnapshot.forEach((docSnap) => {
-    const book = docSnap.data();
-    const card = createBookCard(book, docSnap.id);
-    libraryDiv.appendChild(card);
-  });
-}
-
-function createBookCard(book, id) {
-  const card = document.createElement("div");
-  card.className = "book-card";
-  card.innerHTML = `
-    <img src="${book.cover || 'https://via.placeholder.com/100x150'}" alt="cover">
-    <h3>${book.title}</h3>
-    <p>${book.author}</p>
-    <p>ISBN: ${book.isbn}</p>
-    <button class="edit-btn" onclick="editBook('${id}')">Edit</button>
-    <button class="delete-btn" onclick="deleteBook('${id}')">Delete</button>
-  `;
-  return card;
-}
-
-// ✅ Edit Book
-window.editBook = async function (id) {
-  const newTitle = prompt("Enter new title:");
-  if (!newTitle) return;
-  const bookRef = doc(db, "books", id);
-  await updateDoc(bookRef, { title: newTitle });
-  loadLibrary();
+// ---- Firebase Config ----
+const firebaseConfig = {
+  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
+  authDomain: "readvault-58040.firebaseapp.com",
+  projectId: "readvault-58040",
+  storageBucket: "readvault-58040.appspot.com",
+  messagingSenderId: "735101113966",
+  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
 };
 
-// ✅ Delete Book
-window.deleteBook = async function (id) {
-  if (confirm("Are you sure you want to delete this book?")) {
-    await deleteDoc(doc(db, "books", id));
-    loadLibrary();
+// ---- Initialize Firebase ----
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ---- DOM Elements ----
+const authSection = document.getElementById("authSection");
+const librarySection = document.getElementById("librarySection");
+
+const signupEmail = document.getElementById("signupEmail");
+const signupPassword = document.getElementById("signupPassword");
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+const signupBtn = document.getElementById("signupBtn");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+const bookList = document.getElementById("bookList");
+const searchTitle = document.getElementById("searchTitle");
+const searchBtn = document.getElementById("searchBtn");
+const searchResultsDiv = document.getElementById("searchResults");
+
+// ---- SIGN UP ----
+signupBtn.addEventListener("click", async () => {
+  const email = signupEmail.value.trim();
+  const password = signupPassword.value.trim();
+  if (!email || !password) return alert("Enter both email and password");
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    alert("✅ Signup successful: " + userCredential.user.email);
+    signupEmail.value = "";
+    signupPassword.value = "";
+  } catch (error) { alert("❌ " + error.message); }
+});
+
+// ---- LOGIN ----
+loginBtn.addEventListener("click", async () => {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value.trim();
+  if (!email || !password) return alert("Enter both email and password");
+  try { await signInWithEmailAndPassword(auth, email, password); alert("✅ Logged in!"); loginEmail.value = ""; loginPassword.value = ""; }
+  catch (error) { alert("❌ " + error.message); }
+});
+
+// ---- LOGOUT ----
+logoutBtn.addEventListener("click", async () => { try { await signOut(auth); alert("🚪 Logged out!"); } catch (error) { alert(error.message); } });
+
+// ---- AUTH STATE CHANGE ----
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    authSection.classList.add("hidden");
+    librarySection.classList.remove("hidden");
+    loadBooks(user.uid);
+  } else {
+    authSection.classList.remove("hidden");
+    librarySection.classList.add("hidden");
+    bookList.innerHTML = "";
+    searchResultsDiv.innerHTML = "";
   }
-};
+});
 
-// ✅ Search Books
-window.searchBooks = async function () {
-  const term = searchInput.value.toLowerCase();
-  searchResults.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "books"));
-  querySnapshot.forEach((docSnap) => {
-    const book = docSnap.data();
-    if (
-      book.title.toLowerCase().includes(term) ||
-      book.author.toLowerCase().includes(term) ||
-      (book.isbn && book.isbn.toLowerCase().includes(term))
-    ) {
-      const card = createBookCard(book, docSnap.id);
-      searchResults.appendChild(card);
-    }
+// ---- LOAD BOOKS ----
+async function loadBooks(uid) {
+  bookList.innerHTML = "";
+  const booksRef = collection(db, "users", uid, "books");
+  const snapshot = await getDocs(booksRef);
+
+  snapshot.forEach((docItem) => {
+    const book = docItem.data();
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${book.cover ? `<img src="${book.cover}" alt="cover">` : ""}
+      <strong>${book.name}</strong><br>
+      <em>${book.author || "Unknown author"}</em><br>
+      ISBN: ${book.isbn}<br>
+      <button class="editBtn">Edit</button>
+      <button class="deleteBtn">Delete</button>
+    `;
+
+    // ---- Edit Button: placeholder ----
+    li.querySelector(".editBtn").addEventListener("click", () => {
+      alert("Editing is disabled for now.");
+    });
+
+    // ---- Delete Button ----
+    li.querySelector(".deleteBtn").addEventListener("click", async () => {
+      if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
+        await deleteDoc(doc(db, "users", uid, "books", docItem.id));
+        alert(`🗑 "${book.name}" deleted!`);
+        loadBooks(uid);
+      }
+    });
+
+    bookList.appendChild(li);
   });
-};
+}
 
-// ✅ Tab Switcher
-window.showTab = function (tab) {
-  document.getElementById("libraryTab").style.display =
-    tab === "library" ? "block" : "none";
-  document.getElementById("searchTab").style.display =
-    tab === "search" ? "block" : "none";
-};
+// ---- GOOGLE BOOKS SEARCH ----
+searchBtn.addEventListener("click", async () => {
+  const query = searchTitle.value.trim();
+  if (!query) return alert("Enter a book name to search");
 
-// Load on start
-loadLibrary();
+  searchResultsDiv.innerHTML = "Searching...";
+
+  try {
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    searchResultsDiv.innerHTML = "";
+
+    if (!data.items || data.items.length === 0) {
+      searchResultsDiv.innerHTML = "No books found.";
+      return;
+    }
+
+    data.items.forEach(item => {
+      const book = item.volumeInfo;
+      const title = book.title || "Unknown title";
+      const authors = book.authors ? book.authors.join(", ") : "Unknown author";
+      const isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : "N/A";
+      const thumbnail = book.imageLinks ? book.imageLinks.thumbnail : "";
+
+      const div = document.createElement("div");
+      div.classList.add("search-item");
+      div.innerHTML = `
+        <strong>${title}</strong><br>
+        <em>${authors}</em><br>
+        ISBN: ${isbn}<br>
+        ${thumbnail ? `<img src="${thumbnail}" alt="cover">` : ""}<br>
+        <button class="addBtn">Add</button>
+      `;
+
+      div.querySelector(".addBtn").addEventListener("click", async () => {
+        const user = auth.currentUser;
+        if (!user) return alert("Login first!");
+
+        await addDoc(collection(db, "users", user.uid, "books"), {
+          name: title,
+          author: authors,
+          isbn: isbn,
+          cover: thumbnail
+        });
+        alert(`✅ "${title}" added to your library!`);
+        loadBooks(user.uid);
+      });
+
+      searchResultsDiv.appendChild(div);
+    });
+  } catch (error) {
+    searchResultsDiv.innerHTML = "Error fetching books.";
+    console.error(error);
+  }
+});
