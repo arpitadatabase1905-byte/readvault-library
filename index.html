@@ -3,44 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReadVault Library</title>
+  <title>📚 ReadVault Library</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <h1>📚 ReadVault Library</h1>
-    <nav>
-      <button onclick="showTab('library')">My Library</button>
-      <button onclick="showTab('genreCollection')">By Genre</button>
-    </nav>
   </header>
 
   <main>
-    <!-- Library Tab -->
-    <section id="libraryTab">
+    <!-- Add Book Form -->
+    <section>
+      <h2>Add a Book</h2>
+      <form id="bookForm">
+        <input type="text" id="title" placeholder="Book Title" required>
+        <input type="text" id="author" placeholder="Author" required>
+        <input type="text" id="genre" placeholder="Genre" required>
+        <button type="submit">Add Book</button>
+      </form>
+    </section>
+
+    <!-- Search -->
+    <section>
+      <h2>Search Library</h2>
+      <input type="text" id="searchInput" placeholder="Search by title or author...">
+    </section>
+
+    <!-- Library -->
+    <section>
       <h2>My Library</h2>
       <div id="library" class="book-grid"></div>
     </section>
-
-    <!-- Genre Tab -->
-    <section id="genreTab" style="display: none;">
-      <h2>Books by Genre</h2>
-      <div id="genreCollection" class="book-grid"></div>
-    </section>
   </main>
 
-  <!-- Import JS -->
+  <!-- Scripts -->
   <script type="module" src="script.js"></script>
-
-  <!-- ✅ Tab Switcher -->
-  <script>
-    function showTab(tab) {
-      document.getElementById("libraryTab").style.display = (tab === "library") ? "block" : "none";
-      document.getElementById("genreTab").style.display = (tab === "genreCollection") ? "block" : "none";
-    }
-
-    // Default tab
-    showTab("library");
-  </script>
 </body>
 </html>

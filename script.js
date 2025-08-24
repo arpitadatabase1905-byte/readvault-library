@@ -1,88 +1,97 @@
-// script.js
 import { db } from "./firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// References to UI elements
 const libraryDiv = document.getElementById("library");
-const genreCollectionDiv = document.getElementById("genreCollection");
+const bookForm = document.getElementById("bookForm");
+const searchInput = document.getElementById("searchInput");
+const booksCollection = collection(db, "books");
 
-// Fetch all books from Firestore
-async function fetchBooks() {
-  try {
-    const querySnapshot = await getDocs(collection(db, "books"));
-
-    let books = [];
-    querySnapshot.forEach((doc) => {
-      books.push({ id: doc.id, ...doc.data() });
-    });
-
-    displayLibrary(books);
-    displayByGenre(books);
-
-  } catch (error) {
-    console.error("❌ Error fetching books:", error);
-  }
-}
-
-// Display books in "My Library"
-function displayLibrary(books) {
+// ✅ Fetch and display all books
+async function loadBooks() {
   libraryDiv.innerHTML = "";
-  if (books.length === 0) {
-    libraryDiv.innerHTML = "<p>No books in your library yet.</p>";
-    return;
-  }
+  const querySnapshot = await getDocs(booksCollection);
 
-  books.forEach(book => {
-    const bookCard = document.createElement("div");
-    bookCard.classList.add("book-card");
-    bookCard.innerHTML = `
-      <h3>${book.title || "Untitled"}</h3>
-      <p><strong>Author:</strong> ${book.author || "Unknown"}</p>
-      <p><strong>Genre:</strong> ${book.genre || "Not specified"}</p>
-    `;
-    libraryDiv.appendChild(bookCard);
+  querySnapshot.forEach((docSnap) => {
+    const book = docSnap.data();
+    displayBook(docSnap.id, book);
   });
 }
 
-// Display books grouped by genre
-function displayByGenre(books) {
-  genreCollectionDiv.innerHTML = "";
-  if (books.length === 0) {
-    genreCollectionDiv.innerHTML = "<p>No books available by genre.</p>";
-    return;
-  }
+// ✅ Display a single book card
+function displayBook(id, book) {
+  const card = document.createElement("div");
+  card.className = "book-card";
+  card.innerHTML = `
+    <h3>${book.title}</h3>
+    <p><b>Author:</b> ${book.author}</p>
+    <p><b>Genre:</b> ${book.genre}</p>
+    <button class="edit">Edit</button>
+    <button class="delete">Delete</button>
+  `;
 
-  // Group by genre
-  const genreMap = {};
-  books.forEach(book => {
-    const genre = book.genre || "Other";
-    if (!genreMap[genre]) genreMap[genre] = [];
-    genreMap[genre].push(book);
+  // Delete book
+  card.querySelector(".delete").addEventListener("click", async () => {
+    await deleteDoc(doc(db, "books", id));
+    loadBooks();
   });
 
-  // Render genres
-  for (const [genre, genreBooks] of Object.entries(genreMap)) {
-    const genreSection = document.createElement("div");
-    genreSection.classList.add("genre-section");
-    genreSection.innerHTML = `<h3>${genre}</h3>`;
+  // Edit book
+  card.querySelector(".edit").addEventListener("click", async () => {
+    const newTitle = prompt("New Title:", book.title);
+    const newAuthor = prompt("New Author:", book.author);
+    const newGenre = prompt("New Genre:", book.genre);
 
-    const bookList = document.createElement("div");
-    bookList.classList.add("book-grid");
+    if (newTitle && newAuthor && newGenre) {
+      await updateDoc(doc(db, "books", id), {
+        title: newTitle,
+        author: newAuthor,
+        genre: newGenre
+      });
+      loadBooks();
+    }
+  });
 
-    genreBooks.forEach(book => {
-      const bookCard = document.createElement("div");
-      bookCard.classList.add("book-card");
-      bookCard.innerHTML = `
-        <h4>${book.title || "Untitled"}</h4>
-        <p><strong>Author:</strong> ${book.author || "Unknown"}</p>
-      `;
-      bookList.appendChild(bookCard);
-    });
-
-    genreSection.appendChild(bookList);
-    genreCollectionDiv.appendChild(genreSection);
-  }
+  libraryDiv.appendChild(card);
 }
 
-// Load books when page loads
-fetchBooks();
+// ✅ Add a new book
+bookForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const title = document.getElementById("title").value.trim();
+  const author = document.getElementById("author").value.trim();
+  const genre = document.getElementById("genre").value.trim();
+
+  if (title && author && genre) {
+    await addDoc(booksCollection, { title, author, genre });
+    bookForm.reset();
+    loadBooks();
+  }
+});
+
+// ✅ Search functionality
+searchInput.addEventListener("input", async () => {
+  const searchTerm = searchInput.value.toLowerCase();
+  libraryDiv.innerHTML = "";
+
+  const querySnapshot = await getDocs(booksCollection);
+  querySnapshot.forEach((docSnap) => {
+    const book = docSnap.data();
+    if (
+      book.title.toLowerCase().includes(searchTerm) ||
+      book.author.toLowerCase().includes(searchTerm)
+    ) {
+      displayBook(docSnap.id, book);
+    }
+  });
+});
+
+// Initial load
+loadBooks();
