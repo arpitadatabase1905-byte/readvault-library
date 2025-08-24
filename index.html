@@ -17,26 +17,32 @@
     <button id="logoutBtn">Logout</button>
   </div>
 
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <input type="text" id="searchTitle" placeholder="Search by Title, Author, or ISBN">
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <!-- Search Results -->
+  <div id="searchResults"></div>
+
   <!-- Book List -->
   <ul id="bookList"></ul>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase & JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } 
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } 
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // ---- Firebase Config ----
     const firebaseConfig = {
-  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
-  authDomain: "readvault-58040.firebaseapp.com",
-  projectId: "readvault-58040",
-  storageBucket: "readvault-58040.appspot.com",
-  messagingSenderId: "735101113966",
-  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
-};
+      apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
+      authDomain: "readvault-58040.firebaseapp.com",
+      projectId: "readvault-58040",
+      storageBucket: "readvault-58040.appspot.com",
+      messagingSenderId: "735101113966",
+      appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -49,6 +55,9 @@
     const logoutSection = document.getElementById("logoutSection");
     const userName = document.getElementById("userName");
     const bookList = document.getElementById("bookList");
+    const searchTitle = document.getElementById("searchTitle");
+    const searchBtn = document.getElementById("searchBtn");
+    const searchResultsDiv = document.getElementById("searchResults");
 
     let currentUser = null;
 
@@ -75,6 +84,7 @@
         loginSection.style.display = "block";
         logoutSection.style.display = "none";
         bookList.innerHTML = "";
+        searchResultsDiv.innerHTML = "";
       }
     });
 
@@ -82,13 +92,19 @@
     async function loadBooks(uid) {
       bookList.innerHTML = "";
       const querySnapshot = await getDocs(collection(db, "users", uid, "books"));
-      querySnapshot.forEach((docItem) => {
-        const book = docItem.data();
+      
+      // Sort alphabetically by book name
+      const booksArray = [];
+      querySnapshot.forEach(docItem => {
+        booksArray.push({ id: docItem.id, ...docItem.data() });
+      });
+      booksArray.sort((a, b) => a.name.localeCompare(b.name));
 
+      booksArray.forEach(book => {
         const li = document.createElement("li");
         li.innerHTML = `
           <div class="book-card">
-            <img src="${book.cover || 'https://via.placeholder.com/100'}" alt="cover" class="book-cover">
+            <img src="${book.cover || 'https://via.placeholder.com/150'}" alt="cover" class="book-cover">
             <p class="book-title">${book.name}</p>
             <p class="book-author">by ${book.author || "Unknown"}</p>
             <p class="book-isbn">ISBN: ${book.isbn}</p>
@@ -99,7 +115,7 @@
           </div>
         `;
 
-        // ---- Edit ----
+        // Edit
         li.querySelector(".editBtn").addEventListener("click", async () => {
           const newName = prompt("Enter new book title:", book.name);
           const newAuthor = prompt("Enter new author:", book.author || "Unknown");
@@ -107,33 +123,83 @@
 
           if (newName && newAuthor && newISBN) {
             try {
-              const bookRef = doc(db, "users", uid, "books", docItem.id);
-              await updateDoc(bookRef, {
+              await updateDoc(doc(db, "users", currentUser.uid, "books", book.id), {
                 name: newName,
                 author: newAuthor,
                 isbn: newISBN
               });
               alert(`✏️ "${newName}" updated!`);
-              loadBooks(uid);
-            } catch (err) {
-              console.error("Update failed:", err);
-              alert("❌ Failed to update: " + err.message);
-            }
+              loadBooks(currentUser.uid);
+            } catch (err) { alert("❌ Failed to update: " + err.message); }
           }
         });
 
-        // ---- Delete ----
+        // Delete
         li.querySelector(".deleteBtn").addEventListener("click", async () => {
           if (confirm(`Delete "${book.name}"?`)) {
-            await deleteDoc(doc(db, "users", uid, "books", docItem.id));
+            await deleteDoc(doc(db, "users", currentUser.uid, "books", book.id));
             alert(`🗑️ "${book.name}" deleted!`);
-            loadBooks(uid);
+            loadBooks(currentUser.uid);
           }
         });
 
         bookList.appendChild(li);
       });
     }
+
+    // ---- Search Books (Google Books API) ----
+    searchBtn.addEventListener("click", async () => {
+      const query = searchTitle.value.trim();
+      if (!query) return alert("Enter book name, author, or ISBN");
+
+      searchResultsDiv.innerHTML = "Searching...";
+      try {
+        const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        searchResultsDiv.innerHTML = "";
+
+        if (!data.items || data.items.length === 0) {
+          searchResultsDiv.innerHTML = "No books found.";
+          return;
+        }
+
+        data.items.forEach(item => {
+          const book = item.volumeInfo;
+          const title = book.title || "Unknown title";
+          const authors = book.authors ? book.authors.join(", ") : "Unknown author";
+          const isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : "N/A";
+          const thumbnail = book.imageLinks ? book.imageLinks.thumbnail : "";
+
+          const div = document.createElement("div");
+          div.classList.add("search-item");
+          div.innerHTML = `
+            <strong>${title}</strong><br>
+            <em>${authors}</em><br>
+            ISBN: ${isbn}<br>
+            ${thumbnail ? `<img src="${thumbnail}" alt="cover" style="height:120px;margin:5px 0;">` : ""}<br>
+            <button class="addBtn">Add</button>
+          `;
+
+          div.querySelector(".addBtn").addEventListener("click", async () => {
+            if (!currentUser) return alert("Login first!");
+            await addDoc(collection(db, "users", currentUser.uid, "books"), {
+              name: title,
+              author: authors,
+              isbn: isbn,
+              cover: thumbnail
+            });
+            alert(`✅ "${title}" added to your library!`);
+            loadBooks(currentUser.uid);
+          });
+
+          searchResultsDiv.appendChild(div);
+        });
+
+      } catch (err) {
+        searchResultsDiv.innerHTML = "Error fetching books.";
+        console.error(err);
+      }
+    });
   </script>
 </body>
 </html>
