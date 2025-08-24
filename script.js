@@ -101,10 +101,16 @@ async function loadBooks(uid) {
       <strong>${book.name}</strong><br>
       <em>${book.author || "Unknown author"}</em><br>
       ISBN: ${book.isbn}<br>
+      <button class="editBtn">Edit</button>
       <button class="deleteBtn">Delete</button>
     `;
 
-    // Delete
+    // ---- Edit Button: placeholder ----
+    li.querySelector(".editBtn").addEventListener("click", () => {
+      alert("Editing is disabled for now.");
+    });
+
+    // ---- Delete Button ----
     li.querySelector(".deleteBtn").addEventListener("click", async () => {
       if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
         await deleteDoc(doc(db, "users", uid, "books", docItem.id));
@@ -129,7 +135,10 @@ searchBtn.addEventListener("click", async () => {
     const data = await response.json();
     searchResultsDiv.innerHTML = "";
 
-    if (!data.items || data.items.length === 0) { searchResultsDiv.innerHTML = "No books found."; return; }
+    if (!data.items || data.items.length === 0) {
+      searchResultsDiv.innerHTML = "No books found.";
+      return;
+    }
 
     data.items.forEach(item => {
       const book = item.volumeInfo;
@@ -141,17 +150,23 @@ searchBtn.addEventListener("click", async () => {
       const div = document.createElement("div");
       div.classList.add("search-item");
       div.innerHTML = `
-        ${thumbnail ? `<img src="${thumbnail}" alt="cover">` : ""}
         <strong>${title}</strong><br>
         <em>${authors}</em><br>
         ISBN: ${isbn}<br>
+        ${thumbnail ? `<img src="${thumbnail}" alt="cover">` : ""}<br>
         <button class="addBtn">Add</button>
       `;
 
       div.querySelector(".addBtn").addEventListener("click", async () => {
         const user = auth.currentUser;
         if (!user) return alert("Login first!");
-        await addDoc(collection(db, "users", user.uid, "books"), { name: title, author: authors, isbn, cover: thumbnail });
+
+        await addDoc(collection(db, "users", user.uid, "books"), {
+          name: title,
+          author: authors,
+          isbn: isbn,
+          cover: thumbnail
+        });
         alert(`✅ "${title}" added to your library!`);
         loadBooks(user.uid);
       });

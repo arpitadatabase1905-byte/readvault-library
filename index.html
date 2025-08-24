@@ -9,14 +9,23 @@
       font-family: 'Roboto', sans-serif;
       background: #eef6fb;
       margin: 0;
-      padding: 0 20px;
+      padding: 20px;
       color: #333;
     }
 
-    h1 { text-align: center; color: #1a73e8; margin-top: 20px; }
-    p { text-align: center; color: #555; margin-bottom: 30px; }
+    h1 { text-align: center; color: #1a73e8; margin-top: 10px; }
+    p { text-align: center; color: #555; margin-bottom: 20px; }
 
     .hidden { display: none; }
+
+    #authSection, #librarySection {
+      max-width: 650px;
+      margin: 20px auto;
+      padding: 25px;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
 
     input, button {
       padding: 10px 12px;
@@ -28,22 +37,11 @@
 
     button { cursor: pointer; transition: 0.2s; }
 
-    #authSection, #librarySection {
-      max-width: 650px;
-      margin: 20px auto;
-      padding: 25px;
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
-
-    h2 { color: #1a73e8; margin-bottom: 15px; }
-
     .search-bar, .add-book {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       justify-content: center;
     }
 
@@ -78,66 +76,31 @@
       object-fit: cover;
     }
 
-    button.editBtn { background: #f0ad4e; color: #fff; }
-    button.editBtn:hover { background: #ffbf5b; }
-    button.deleteBtn { background: #d9534f; color: #fff; }
-    button.deleteBtn:hover { background: #e06b6a; }
-    .addBtn { background: #5cb85c; color: #fff; }
+    #bookList li button, .search-item button {
+      margin: 5px 5px 0 0;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: none;
+      font-weight: bold;
+    }
+
+    .editBtn { background: #f0ad4e; color: #fff; }
+    .editBtn:hover { background: #f5b95c; }
+
+    .deleteBtn { background: #d9534f; color: #fff; }
+    .deleteBtn:hover { background: #e06b6a; }
+
+    .addBtn { background: #5cb85c; color: #fff; padding: 5px 10px; border-radius: 6px; }
     .addBtn:hover { background: #72c372; }
 
     #logoutBtn {
       background: #1a73e8;
       color: #fff;
       width: 100%;
-      margin-top: 20px;
+      margin-top: 15px;
+      padding: 10px;
     }
     #logoutBtn:hover { background: #4285f4; }
-
-    #editModal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-
-    #editModal div {
-      background: #fff;
-      padding: 25px;
-      border-radius: 15px;
-      width: 320px;
-      text-align: center;
-      box-shadow: 0 6px 25px rgba(0,0,0,0.15);
-    }
-
-    #editModal input {
-      width: 90%;
-      margin: 8px 0;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    #editModal button {
-      margin: 8px 5px;
-      width: 80px;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-    }
-
-    #saveEditBtn { background: #5cb85c; color: #fff; }
-    #saveEditBtn:hover { background: #72c372; }
-    #cancelEditBtn { background: #d9534f; color: #fff; }
-    #cancelEditBtn:hover { background: #e06b6a; }
-
-    @media (max-width: 500px) {
-      #bookList li, .search-item { width: 140px; }
-      #editModal div { width: 90%; }
-    }
   </style>
 </head>
 <body>
@@ -159,30 +122,20 @@
 
   <!-- Library Section -->
   <div id="librarySection" class="hidden">
+
+    <!-- Search Bar -->
     <div class="search-bar">
       <input type="text" id="searchTitle" placeholder="Book Name">
       <button id="searchBtn">Search</button>
     </div>
 
-    <!-- Search results -->
+    <!-- Search Results -->
     <div id="searchResults"></div>
 
     <h2>📖 My Library</h2>
     <ul id="bookList"></ul>
 
     <button id="logoutBtn">Logout</button>
-  </div>
-
-  <!-- Edit Modal -->
-  <div id="editModal" class="hidden">
-    <div>
-      <h3>Edit Book</h3>
-      <input type="text" id="editTitle" placeholder="Title"><br>
-      <input type="text" id="editAuthor" placeholder="Author"><br>
-      <input type="text" id="editISBN" placeholder="ISBN"><br>
-      <button id="saveEditBtn">Save</button>
-      <button id="cancelEditBtn">Cancel</button>
-    </div>
   </div>
 
   <script type="module" src="script.js"></script>
