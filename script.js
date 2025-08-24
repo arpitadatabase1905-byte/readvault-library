@@ -14,7 +14,8 @@ import {
   getDocs, 
   doc, 
   setDoc, 
-  deleteDoc 
+  deleteDoc,
+  getDoc           // <-- FIXED: Added getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ---- Firebase Config ----
@@ -114,7 +115,7 @@ onAuthStateChanged(auth, async (user) => {
     // Load Profile
     const userDoc = doc(db, "users", user.uid);
     try {
-      const docSnap = await getDoc(userDoc);
+      const docSnap = await getDoc(userDoc);   // <-- Works now
       if (docSnap.exists()) {
         const data = docSnap.data();
         profileEmail.textContent = data.email || user.email;
