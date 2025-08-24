@@ -208,4 +208,27 @@ searchBtn.addEventListener("click", async () => {
     searchResultsDiv.innerHTML = "Error fetching books.";
     console.error(error);
   }
+
+  // ---- Tab Switching ----
+const tabButtons = document.querySelectorAll(".tab-btn");
+const tabContents = document.querySelectorAll(".tab-content");
+
+tabButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    const target = btn.dataset.tab;
+
+    // Remove active class from all buttons and contents
+    tabButtons.forEach(b => b.classList.remove("active"));
+    tabContents.forEach(c => c.style.display = "none");
+
+    // Activate clicked button and its content
+    btn.classList.add("active");
+    document.getElementById(target).style.display = "block";
+  });
+});
+
+// Set first tab as active by default
+document.querySelector(".tab-btn.active").click();
+
+
 });
