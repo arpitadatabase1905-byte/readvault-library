@@ -115,13 +115,14 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     authSection.classList.add("hidden");
     librarySection.classList.remove("hidden");
-    loadBooks(user.uid);
-    loadProfile(user.uid);
+    await loadBooks(user.uid);
+    await loadProfile(user.uid);
   } else {
     authSection.classList.remove("hidden");
     librarySection.classList.add("hidden");
     bookList.innerHTML = "";
     searchResultsDiv.innerHTML = "";
+    profileSection.classList.add("hidden");
   }
 });
 
@@ -146,6 +147,7 @@ async function loadBooks(uid) {
     deleteBtn.addEventListener("click", async () => {
       if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
         await deleteDoc(doc(db, "users", uid, "books", docItem.id));
+        alert(`🗑 "${book.name}" deleted!`);
         loadBooks(uid);
       }
     });
@@ -198,6 +200,8 @@ searchBtn.addEventListener("click", async () => {
           isbn: isbn,
           cover: thumbnail
         });
+
+        alert(`✅ "${title}" added to your library!`);
         loadBooks(user.uid);
       });
 
@@ -209,11 +213,12 @@ searchBtn.addEventListener("click", async () => {
   }
 });
 
-// ---- Profile Section ----
+// ---- Profile Toggle ----
 profileIcon.addEventListener("click", () => {
   profileSection.classList.toggle("hidden");
 });
 
+// ---- Load Profile ----
 async function loadProfile(uid) {
   const userRef = doc(db, "users", uid);
   const docSnap = await getDoc(userRef);
@@ -225,12 +230,12 @@ async function loadProfile(uid) {
   }
 }
 
+// ---- Save Profile ----
 saveProfileBtn.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return alert("Login first!");
 
   const userRef = doc(db, "users", user.uid);
-
   await setDoc(userRef, {
     displayName: profileName.value.trim(),
     bio: profileBio.value.trim(),
