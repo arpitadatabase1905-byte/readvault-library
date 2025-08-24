@@ -25,12 +25,12 @@ const db = getFirestore(app);
 // ---- DOM Elements ----
 const authSection = document.getElementById("authSection");
 const librarySection = document.getElementById("librarySection");
-const bookList = document.getElementById("bookList");
+const allBooksTab = document.getElementById("allBooksTab");
+const genreTab = document.getElementById("genreTab");
+const genreListDiv = document.getElementById("genreList");
 const searchTitle = document.getElementById("searchTitle");
 const searchBtn = document.getElementById("searchBtn");
 const searchResultsDiv = document.getElementById("searchResults");
-const searchGenre = document.getElementById("searchGenre");
-
 const signupEmail = document.getElementById("signupEmail");
 const signupPassword = document.getElementById("signupPassword");
 const loginEmail = document.getElementById("loginEmail");
@@ -38,11 +38,7 @@ const loginPassword = document.getElementById("loginPassword");
 const signupBtn = document.getElementById("signupBtn");
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
-
 const tabButtons = document.querySelectorAll(".tabBtn");
-const allBooksTab = document.getElementById("allBooksTab");
-const genreTab = document.getElementById("genreTab");
-const genreListDiv = document.getElementById("genreList");
 
 // ---- Signup ----
 signupBtn.addEventListener("click", async () => {
@@ -87,7 +83,7 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     authSection.classList.remove("hidden");
     librarySection.classList.add("hidden");
-    bookList.innerHTML = "";
+    allBooksTab.innerHTML = "";
     searchResultsDiv.innerHTML = "";
     genreListDiv.innerHTML = "";
   }
@@ -95,7 +91,7 @@ onAuthStateChanged(auth, async (user) => {
 
 // ---- Load Books ----
 async function loadBooks(uid) {
-  bookList.innerHTML = "";
+  allBooksTab.innerHTML = "";
   const booksRef = collection(db, "users", uid, "books");
   const snapshot = await getDocs(booksRef);
 
@@ -132,9 +128,9 @@ async function loadBooks(uid) {
       }
     });
 
-    bookList.appendChild(li);
+    allBooksTab.appendChild(li);
   });
-  loadBooksByGenre(); // Refresh genre tab after loading all books
+  loadBooksByGenre();
 }
 
 // ---- Google Books Search ----
@@ -147,7 +143,6 @@ searchBtn.addEventListener("click", async () => {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
     const data = await response.json();
     searchResultsDiv.innerHTML = "";
-
     if (!data.items || data.items.length === 0) { searchResultsDiv.innerHTML = "No books found."; return; }
 
     data.items.forEach(item => {
@@ -212,7 +207,6 @@ async function loadBooksByGenre() {
 
   const books = snapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
   const genreMap = {};
-
   books.forEach(book => {
     const genre = book.genre || "Unknown";
     if (!genreMap[genre]) genreMap[genre] = [];
@@ -225,12 +219,7 @@ async function loadBooksByGenre() {
     genreDiv.innerHTML = `<h3>${genre}</h3>`;
     booksArr.forEach(book => {
       const bookDiv = document.createElement("div");
-      bookDiv.style.border = "1px solid #ccc";
-      bookDiv.style.padding = "8px";
-      bookDiv.style.marginBottom = "8px";
-      bookDiv.style.borderRadius = "8px";
-      bookDiv.style.textAlign = "center";
-
+      bookDiv.classList.add("genre-item");
       bookDiv.innerHTML = `
         <strong>${book.name}</strong><br>
         <em>${book.author || "Unknown"}</em><br>
@@ -240,7 +229,6 @@ async function loadBooksByGenre() {
         <button class="deleteBtn">Delete</button>
       `;
 
-      // Edit
       bookDiv.querySelector(".editBtn").addEventListener("click", async () => {
         const newName = prompt("Edit book name:", book.name);
         const newAuthor = prompt("Edit author:", book.author || "");
@@ -253,7 +241,6 @@ async function loadBooksByGenre() {
         loadBooks(user.uid);
       });
 
-      // Delete
       bookDiv.querySelector(".deleteBtn").addEventListener("click", async () => {
         if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
           await deleteDoc(doc(db, "users", user.uid, "books", book.id));
@@ -264,7 +251,6 @@ async function loadBooksByGenre() {
 
       genreDiv.appendChild(bookDiv);
     });
-
     genreListDiv.appendChild(genreDiv);
   }
 }
