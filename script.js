@@ -53,21 +53,11 @@ const searchTitle = document.getElementById("searchTitle");
 const searchBtn = document.getElementById("searchBtn");
 const searchResultsDiv = document.getElementById("searchResults");
 
-// Edit Modal Elements
-const editModal = document.getElementById("editModal");
-const editTitleInput = document.getElementById("editTitle");
-const editAuthorInput = document.getElementById("editAuthor");
-const editISBNInput = document.getElementById("editISBN");
-const saveEditBtn = document.getElementById("saveEditBtn");
-const cancelEditBtn = document.getElementById("cancelEditBtn");
-
-let currentEditDocId = null; // store the book being edited
-let currentUserId = null;
-
 // ---- SIGN UP ----
 signupBtn.addEventListener("click", async () => {
   const email = signupEmail.value.trim();
   const password = signupPassword.value.trim();
+
   if (!email || !password) return alert("Enter both email and password");
 
   try {
@@ -75,13 +65,16 @@ signupBtn.addEventListener("click", async () => {
     alert("✅ Signup successful: " + userCredential.user.email);
     signupEmail.value = "";
     signupPassword.value = "";
-  } catch (error) { alert("❌ " + error.message); }
+  } catch (error) {
+    alert("❌ " + error.message);
+  }
 });
 
 // ---- LOGIN ----
 loginBtn.addEventListener("click", async () => {
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
+
   if (!email || !password) return alert("Enter both email and password");
 
   try {
@@ -89,13 +82,19 @@ loginBtn.addEventListener("click", async () => {
     alert("✅ Logged in!");
     loginEmail.value = "";
     loginPassword.value = "";
-  } catch (error) { alert("❌ " + error.message); }
+  } catch (error) {
+    alert("❌ " + error.message);
+  }
 });
 
 // ---- LOGOUT ----
 logoutBtn.addEventListener("click", async () => {
-  try { await signOut(auth); alert("🚪 Logged out!"); }
-  catch (error) { alert(error.message); }
+  try {
+    await signOut(auth);
+    alert("🚪 Logged out!");
+  } catch (error) {
+    alert(error.message);
+  }
 });
 
 // ---- AUTH STATE CHANGE ----
@@ -114,7 +113,6 @@ onAuthStateChanged(auth, (user) => {
 
 // ---- LOAD BOOKS ----
 async function loadBooks(uid) {
-  currentUserId = uid;
   bookList.innerHTML = "";
   const booksRef = collection(db, "users", uid, "books");
   const snapshot = await getDocs(booksRef);
@@ -132,17 +130,26 @@ async function loadBooks(uid) {
       <button class="deleteBtn">Delete</button>
     `;
 
-    // Edit
-    li.querySelector(".editBtn").addEventListener("click", () => {
-      currentEditDocId = docItem.id;
-      editTitleInput.value = book.name;
-      editAuthorInput.value = book.author || "";
-      editISBNInput.value = book.isbn;
-      editModal.classList.remove("hidden");
+    // ---- Edit Book ----
+    const editBtn = li.querySelector(".editBtn");
+    editBtn.addEventListener("click", async () => {
+      const newName = prompt("Enter new book title:", book.name) || book.name;
+      const newAuthor = prompt("Enter new author:", book.author || "") || book.author;
+      const newISBN = prompt("Enter new ISBN:", book.isbn) || book.isbn;
+
+      await updateDoc(doc(db, "users", uid, "books", docItem.id), {
+        name: newName,
+        author: newAuthor,
+        isbn: newISBN
+      });
+
+      alert(`✅ "${newName}" updated!`);
+      loadBooks(uid);
     });
 
-    // Delete
-    li.querySelector(".deleteBtn").addEventListener("click", async () => {
+    // ---- Delete Book ----
+    const deleteBtn = li.querySelector(".deleteBtn");
+    deleteBtn.addEventListener("click", async () => {
       if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
         await deleteDoc(doc(db, "users", uid, "books", docItem.id));
         alert(`🗑 "${book.name}" deleted!`);
@@ -153,31 +160,6 @@ async function loadBooks(uid) {
     bookList.appendChild(li);
   });
 }
-
-// ---- SAVE EDIT ----
-saveEditBtn.addEventListener("click", async () => {
-  const updatedName = editTitleInput.value.trim();
-  const updatedAuthor = editAuthorInput.value.trim();
-  const updatedISBN = editISBNInput.value.trim();
-
-  if (!updatedName || !currentEditDocId) return alert("Title cannot be empty");
-
-  await updateDoc(doc(db, "users", currentUserId, "books", currentEditDocId), {
-    name: updatedName,
-    author: updatedAuthor,
-    isbn: updatedISBN
-  });
-
-  editModal.classList.add("hidden");
-  alert(`✅ "${updatedName}" updated!`);
-  loadBooks(currentUserId);
-});
-
-// ---- CANCEL EDIT ----
-cancelEditBtn.addEventListener("click", () => {
-  editModal.classList.add("hidden");
-  currentEditDocId = null;
-});
 
 // ---- GOOGLE BOOKS SEARCH ----
 searchBtn.addEventListener("click", async () => {
@@ -213,7 +195,8 @@ searchBtn.addEventListener("click", async () => {
         <button class="addBtn">Add</button>
       `;
 
-      div.querySelector(".addBtn").addEventListener("click", async () => {
+      const addBtn = div.querySelector(".addBtn");
+      addBtn.addEventListener("click", async () => {
         const user = auth.currentUser;
         if (!user) return alert("Login first!");
 
@@ -223,7 +206,6 @@ searchBtn.addEventListener("click", async () => {
           isbn: isbn,
           cover: thumbnail
         });
-
         alert(`✅ "${title}" added to your library!`);
         loadBooks(user.uid);
       });
