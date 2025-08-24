@@ -2,145 +2,206 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>📚 ReadVault</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <title>My Online Library</title>
   <style>
     body {
-      font-family: 'Roboto', sans-serif;
-      background: #eef6fb;
-      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
       padding: 20px;
-      color: #333;
     }
 
-    h1 { text-align: center; color: #1a73e8; margin-top: 10px; }
-    p { text-align: center; color: #555; margin-bottom: 20px; }
-
-    .hidden { display: none; }
-
-    #authSection, #librarySection {
-      max-width: 650px;
-      margin: 20px auto;
-      padding: 25px;
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
-
-    input, button {
-      padding: 10px 12px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-
-    button { cursor: pointer; transition: 0.2s; }
-
-    .search-bar, .add-book {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 20px;
-      justify-content: center;
-    }
-
-    #bookList, #searchResults {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      padding: 0;
-      justify-content: center;
-    }
-
-    #bookList li, .search-item {
-      list-style: none;
-      width: 160px;
+    h1 {
       text-align: center;
-      border-radius: 12px;
-      background: #ffffff;
-      padding: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    #bookList li:hover, .search-item:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    #loginSection, #logoutSection {
+      text-align: center;
+      margin-bottom: 20px;
     }
 
-    #bookList img, .search-item img {
-      height: 180px;
-      margin-bottom: 8px;
-      border-radius: 8px;
-      object-fit: cover;
+    #bookList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
     }
 
-    #bookList li button, .search-item button {
-      margin: 5px 5px 0 0;
-      padding: 5px 10px;
-      border-radius: 6px;
-      border: none;
-      font-weight: bold;
-    }
-
-    .editBtn { background: #f0ad4e; color: #fff; }
-    .editBtn:hover { background: #f5b95c; }
-
-    .deleteBtn { background: #d9534f; color: #fff; }
-    .deleteBtn:hover { background: #e06b6a; }
-
-    .addBtn { background: #5cb85c; color: #fff; padding: 5px 10px; border-radius: 6px; }
-    .addBtn:hover { background: #72c372; }
-
-    #logoutBtn {
-      background: #1a73e8;
-      color: #fff;
-      width: 100%;
-      margin-top: 15px;
+    .book-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1px solid #ddd;
       padding: 10px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
     }
-    #logoutBtn:hover { background: #4285f4; }
+
+    .book-cover {
+      width: 100px;
+      height: auto;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .book-title {
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .book-author, .book-isbn {
+      font-size: 0.9em;
+      margin: 2px 0;
+      color: #555;
+    }
+
+    .book-actions {
+      margin-top: 10px;
+    }
+
+    .book-actions button {
+      margin: 0 5px;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #007bff;
+      color: #fff;
+    }
+
+    .book-actions button.deleteBtn {
+      background: #dc3545;
+    }
   </style>
 </head>
 <body>
-  <h1>📚 ReadVault</h1>
-  <p>Your personal online library</p>
+  <h1>📚 My Online Library</h1>
 
-  <!-- Auth Section -->
-  <div id="authSection">
-    <h2>Sign Up</h2>
-    <input type="email" id="signupEmail" placeholder="Email">
-    <input type="password" id="signupPassword" placeholder="Password">
-    <button id="signupBtn">Sign Up</button>
-
-    <h2>Login</h2>
-    <input type="email" id="loginEmail" placeholder="Email">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button id="loginBtn">Login</button>
+  <!-- Login / Logout -->
+  <div id="loginSection">
+    <button id="loginBtn">Login with Google</button>
   </div>
-
-  <!-- Library Section -->
-  <div id="librarySection" class="hidden">
-
-    <!-- Search Bar -->
-    <div class="search-bar">
-      <input type="text" id="searchTitle" placeholder="Book Name">
-      <button id="searchBtn">Search</button>
-    </div>
-
-    <!-- Search Results -->
-    <div id="searchResults"></div>
-
-    <h2>📖 My Library</h2>
-    <ul id="bookList"></ul>
-
+  <div id="logoutSection" style="display:none;">
+    <p>Welcome <span id="userName"></span> 👋</p>
     <button id="logoutBtn">Logout</button>
   </div>
 
-  <script type="module">
-  import "./script.js";
-</script>
+  <!-- Book List -->
+  <ul id="bookList"></ul>
 
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } 
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ---- Firebase Config ----
+    const firebaseConfig = {
+  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
+  authDomain: "readvault-58040.firebaseapp.com",
+  projectId: "readvault-58040",
+  storageBucket: "readvault-58040.appspot.com",
+  messagingSenderId: "735101113966",
+  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const db = getFirestore(app);
+
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const loginSection = document.getElementById("loginSection");
+    const logoutSection = document.getElementById("logoutSection");
+    const userName = document.getElementById("userName");
+    const bookList = document.getElementById("bookList");
+
+    let currentUser = null;
+
+    // ---- Login ----
+    loginBtn.addEventListener("click", async () => {
+      await signInWithPopup(auth, provider);
+    });
+
+    // ---- Logout ----
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    // ---- Auth State ----
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        loginSection.style.display = "none";
+        logoutSection.style.display = "block";
+        userName.textContent = user.displayName;
+        loadBooks(user.uid);
+      } else {
+        currentUser = null;
+        loginSection.style.display = "block";
+        logoutSection.style.display = "none";
+        bookList.innerHTML = "";
+      }
+    });
+
+    // ---- Load Books ----
+    async function loadBooks(uid) {
+      bookList.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "users", uid, "books"));
+      querySnapshot.forEach((docItem) => {
+        const book = docItem.data();
+
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="book-card">
+            <img src="${book.cover || 'https://via.placeholder.com/100'}" alt="cover" class="book-cover">
+            <p class="book-title">${book.name}</p>
+            <p class="book-author">by ${book.author || "Unknown"}</p>
+            <p class="book-isbn">ISBN: ${book.isbn}</p>
+            <div class="book-actions">
+              <button class="editBtn">✏️ Edit</button>
+              <button class="deleteBtn">🗑️ Delete</button>
+            </div>
+          </div>
+        `;
+
+        // ---- Edit ----
+        li.querySelector(".editBtn").addEventListener("click", async () => {
+          const newName = prompt("Enter new book title:", book.name);
+          const newAuthor = prompt("Enter new author:", book.author || "Unknown");
+          const newISBN = prompt("Enter new ISBN:", book.isbn);
+
+          if (newName && newAuthor && newISBN) {
+            try {
+              const bookRef = doc(db, "users", uid, "books", docItem.id);
+              await updateDoc(bookRef, {
+                name: newName,
+                author: newAuthor,
+                isbn: newISBN
+              });
+              alert(`✏️ "${newName}" updated!`);
+              loadBooks(uid);
+            } catch (err) {
+              console.error("Update failed:", err);
+              alert("❌ Failed to update: " + err.message);
+            }
+          }
+        });
+
+        // ---- Delete ----
+        li.querySelector(".deleteBtn").addEventListener("click", async () => {
+          if (confirm(`Delete "${book.name}"?`)) {
+            await deleteDoc(doc(db, "users", uid, "books", docItem.id));
+            alert(`🗑️ "${book.name}" deleted!`);
+            loadBooks(uid);
+          }
+        });
+
+        bookList.appendChild(li);
+      });
+    }
+  </script>
 </body>
 </html>
