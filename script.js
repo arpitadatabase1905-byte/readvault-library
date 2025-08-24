@@ -14,8 +14,9 @@ import {
   getDocs,
   doc,
   setDoc,
-  getDoc,
+  updateDoc,
   deleteDoc,
+  getDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -37,8 +38,11 @@ const db = getFirestore(app);
 // ---- DOM Elements ----
 const authSection = document.getElementById("authSection");
 const librarySection = document.getElementById("librarySection");
+const bookList = document.getElementById("bookList");
+const searchTitle = document.getElementById("searchTitle");
+const searchBtn = document.getElementById("searchBtn");
+const searchResultsDiv = document.getElementById("searchResults");
 
-// Auth inputs
 const signupEmail = document.getElementById("signupEmail");
 const signupPassword = document.getElementById("signupPassword");
 const loginEmail = document.getElementById("loginEmail");
@@ -48,22 +52,14 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
 // Profile elements
-const profileBtn = document.getElementById("profileBtn");
-const profileDropdown = document.getElementById("profileDropdown");
+const profileIcon = document.getElementById("profileIcon");
+const profileSection = document.getElementById("profileSection");
 const profileName = document.getElementById("profileName");
 const profileBio = document.getElementById("profileBio");
 const profilePhoto = document.getElementById("profilePhoto");
 const saveProfileBtn = document.getElementById("saveProfileBtn");
 
-// Library elements
-const bookList = document.getElementById("bookList");
-
-// Search inputs
-const searchTitle = document.getElementById("searchTitle");
-const searchBtn = document.getElementById("searchBtn");
-const searchResultsDiv = document.getElementById("searchResults");
-
-// ---- SIGN UP ----
+// ---- Signup ----
 signupBtn.addEventListener("click", async () => {
   const email = signupEmail.value.trim();
   const password = signupPassword.value.trim();
@@ -71,17 +67,16 @@ signupBtn.addEventListener("click", async () => {
 
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-    // Create user document in Firestore
-    await setDoc(doc(db, "users", userCredential.user.uid), {
+    const userRef = doc(db, "users", userCredential.user.uid);
+    await setDoc(userRef, {
       email: email,
       displayName: "",
       bio: "",
       photoURL: "",
       createdAt: serverTimestamp()
-    });
+    }, { merge: true });
 
-    alert(`✅ Signup successful!`);
+    alert("✅ Signup successful!");
     signupEmail.value = "";
     signupPassword.value = "";
   } catch (error) {
@@ -89,7 +84,7 @@ signupBtn.addEventListener("click", async () => {
   }
 });
 
-// ---- LOGIN ----
+// ---- Login ----
 loginBtn.addEventListener("click", async () => {
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
@@ -105,7 +100,7 @@ loginBtn.addEventListener("click", async () => {
   }
 });
 
-// ---- LOGOUT ----
+// ---- Logout ----
 logoutBtn.addEventListener("click", async () => {
   try {
     await signOut(auth);
@@ -115,25 +110,13 @@ logoutBtn.addEventListener("click", async () => {
   }
 });
 
-// ---- AUTH STATE CHANGE ----
+// ---- Auth State Change ----
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     authSection.classList.add("hidden");
     librarySection.classList.remove("hidden");
-
-    // Load user profile
-    const userDocRef = doc(db, "users", user.uid);
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      profileName.value = data.displayName || "";
-      profileBio.value = data.bio || "";
-      profilePhoto.src = data.photoURL || "default-profile.png";
-    } else {
-      await setDoc(userDocRef, { email: user.email, displayName: "", bio: "", photoURL: "" });
-    }
-
     loadBooks(user.uid);
+    loadProfile(user.uid);
   } else {
     authSection.classList.remove("hidden");
     librarySection.classList.add("hidden");
@@ -142,27 +125,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ---- SAVE PROFILE ----
-saveProfileBtn.addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user) return alert("Login first!");
-
-  const userDocRef = doc(db, "users", user.uid);
-  await setDoc(userDocRef, {
-    displayName: profileName.value.trim(),
-    bio: profileBio.value.trim(),
-    photoURL: profilePhoto.src
-  }, { merge: true });
-
-  alert("✅ Profile saved successfully!");
-});
-
-// ---- TOGGLE PROFILE DROPDOWN ----
-profileBtn.addEventListener("click", () => {
-  profileDropdown.classList.toggle("hidden");
-});
-
-// ---- LOAD BOOKS ----
+// ---- Load Books ----
 async function loadBooks(uid) {
   bookList.innerHTML = "";
   const booksRef = collection(db, "users", uid, "books");
@@ -175,16 +138,14 @@ async function loadBooks(uid) {
       <strong>${book.name}</strong><br>
       <em>${book.author || "Unknown author"}</em><br>
       ISBN: ${book.isbn}<br>
-      ${book.cover ? `<img src="${book.cover}" alt="cover">` : ""}
-      <br>
+      ${book.cover ? `<img src="${book.cover}" alt="cover">` : ""}<br>
       <button class="deleteBtn">Delete</button>
     `;
 
-    // Delete book
-    li.querySelector(".deleteBtn").addEventListener("click", async () => {
+    const deleteBtn = li.querySelector(".deleteBtn");
+    deleteBtn.addEventListener("click", async () => {
       if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
         await deleteDoc(doc(db, "users", uid, "books", docItem.id));
-        alert(`🗑 "${book.name}" deleted!`);
         loadBooks(uid);
       }
     });
@@ -193,11 +154,10 @@ async function loadBooks(uid) {
   });
 }
 
-// ---- GOOGLE BOOKS SEARCH ----
+// ---- Google Books Search ----
 searchBtn.addEventListener("click", async () => {
   const query = searchTitle.value.trim();
   if (!query) return alert("Enter a book name to search");
-
   searchResultsDiv.innerHTML = "Searching...";
 
   try {
@@ -227,7 +187,8 @@ searchBtn.addEventListener("click", async () => {
         <button class="addBtn">Add</button>
       `;
 
-      div.querySelector(".addBtn").addEventListener("click", async () => {
+      const addBtn = div.querySelector(".addBtn");
+      addBtn.addEventListener("click", async () => {
         const user = auth.currentUser;
         if (!user) return alert("Login first!");
 
@@ -237,8 +198,6 @@ searchBtn.addEventListener("click", async () => {
           isbn: isbn,
           cover: thumbnail
         });
-
-        alert(`✅ "${title}" added to your library!`);
         loadBooks(user.uid);
       });
 
@@ -248,4 +207,35 @@ searchBtn.addEventListener("click", async () => {
     searchResultsDiv.innerHTML = "Error fetching books.";
     console.error(error);
   }
+});
+
+// ---- Profile Section ----
+profileIcon.addEventListener("click", () => {
+  profileSection.classList.toggle("hidden");
+});
+
+async function loadProfile(uid) {
+  const userRef = doc(db, "users", uid);
+  const docSnap = await getDoc(userRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    profileName.value = data.displayName || "";
+    profileBio.value = data.bio || "";
+    profilePhoto.src = data.photoURL || "";
+  }
+}
+
+saveProfileBtn.addEventListener("click", async () => {
+  const user = auth.currentUser;
+  if (!user) return alert("Login first!");
+
+  const userRef = doc(db, "users", user.uid);
+
+  await setDoc(userRef, {
+    displayName: profileName.value.trim(),
+    bio: profileBio.value.trim(),
+    photoURL: profilePhoto.src
+  }, { merge: true });
+
+  alert("✅ Profile saved successfully!");
 });
