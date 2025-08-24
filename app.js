@@ -1,107 +1,71 @@
-// app.js
-import { auth, db } from "./firebase.js";
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { 
-  collection, addDoc, getDocs, query, where 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-// === SIGN UP ===
-async function signup(email, password) {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    alert("Signup successful! Welcome " + userCredential.user.email);
-  } catch (error) {
-    alert("Signup error: " + error.message);
-  }
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f9f9f9;
 }
 
-// === LOGIN ===
-async function login(email, password) {
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    alert("Logged in as " + userCredential.user.email);
-  } catch (error) {
-    alert("Login error: " + error.message);
-  }
+header {
+  background: #333;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-// === LOGOUT ===
-async function logout() {
-  try {
-    await signOut(auth);
-    alert("Logged out");
-  } catch (error) {
-    alert("Logout error: " + error.message);
-  }
+nav button {
+  background: #555;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  margin-left: 5px;
+  cursor: pointer;
+  border-radius: 5px;
 }
 
-// === LISTEN FOR AUTH CHANGES ===
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    document.getElementById("user-status").innerText = `Logged in as ${user.email}`;
-    loadBooks(user.uid);
-  } else {
-    document.getElementById("user-status").innerText = "Not logged in";
-  }
-});
-
-// === ADD BOOK TO FIRESTORE ===
-async function addBook(userId, title, author) {
-  try {
-    await addDoc(collection(db, "books"), {
-      userId,
-      title,
-      author,
-      createdAt: new Date()
-    });
-    alert("Book added!");
-  } catch (error) {
-    alert("Error adding book: " + error.message);
-  }
+nav button:hover {
+  background: #777;
 }
 
-// === LOAD USER’S BOOKS ===
-async function loadBooks(userId) {
-  const q = query(collection(db, "books"), where("userId", "==", userId));
-  const querySnapshot = await getDocs(q);
-  const bookList = document.getElementById("book-list");
-  bookList.innerHTML = "";
-
-  querySnapshot.forEach((doc) => {
-    const book = doc.data();
-    const li = document.createElement("li");
-    li.innerText = `${book.title} by ${book.author}`;
-    bookList.appendChild(li);
-  });
+main {
+  padding: 20px;
 }
 
-// === Attach to UI buttons (example) ===
-document.getElementById("signup-btn").addEventListener("click", () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  signup(email, password);
-});
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
 
-document.getElementById("login-btn").addEventListener("click", () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  login(email, password);
-});
+.book-card {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+}
 
-document.getElementById("logout-btn").addEventListener("click", logout);
+.book-card img {
+  width: 100px;
+  height: 150px;
+  object-fit: cover;
+}
 
-document.getElementById("add-book-btn").addEventListener("click", () => {
-  const title = document.getElementById("book-title").value;
-  const author = document.getElementById("book-author").value;
-  const user = auth.currentUser;
-  if (user) {
-    addBook(user.uid, title, author);
-  } else {
-    alert("Please log in first!");
-  }
-});
+.book-card button {
+  margin-top: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background: #007bff;
+  color: white;
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: white;
+}

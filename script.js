@@ -1,97 +1,82 @@
 import { db } from "./firebase.js";
 import {
   collection,
-  addDoc,
   getDocs,
-  deleteDoc,
   doc,
-  updateDoc
+  updateDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const libraryDiv = document.getElementById("library");
-const bookForm = document.getElementById("bookForm");
 const searchInput = document.getElementById("searchInput");
-const booksCollection = collection(db, "books");
+const searchResults = document.getElementById("searchResults");
 
-// ✅ Fetch and display all books
-async function loadBooks() {
+async function loadLibrary() {
   libraryDiv.innerHTML = "";
-  const querySnapshot = await getDocs(booksCollection);
-
+  const querySnapshot = await getDocs(collection(db, "books"));
   querySnapshot.forEach((docSnap) => {
     const book = docSnap.data();
-    displayBook(docSnap.id, book);
+    const card = createBookCard(book, docSnap.id);
+    libraryDiv.appendChild(card);
   });
 }
 
-// ✅ Display a single book card
-function displayBook(id, book) {
+function createBookCard(book, id) {
   const card = document.createElement("div");
   card.className = "book-card";
   card.innerHTML = `
+    <img src="${book.cover || 'https://via.placeholder.com/100x150'}" alt="cover">
     <h3>${book.title}</h3>
-    <p><b>Author:</b> ${book.author}</p>
-    <p><b>Genre:</b> ${book.genre}</p>
-    <button class="edit">Edit</button>
-    <button class="delete">Delete</button>
+    <p>${book.author}</p>
+    <p>ISBN: ${book.isbn}</p>
+    <button class="edit-btn" onclick="editBook('${id}')">Edit</button>
+    <button class="delete-btn" onclick="deleteBook('${id}')">Delete</button>
   `;
-
-  // Delete book
-  card.querySelector(".delete").addEventListener("click", async () => {
-    await deleteDoc(doc(db, "books", id));
-    loadBooks();
-  });
-
-  // Edit book
-  card.querySelector(".edit").addEventListener("click", async () => {
-    const newTitle = prompt("New Title:", book.title);
-    const newAuthor = prompt("New Author:", book.author);
-    const newGenre = prompt("New Genre:", book.genre);
-
-    if (newTitle && newAuthor && newGenre) {
-      await updateDoc(doc(db, "books", id), {
-        title: newTitle,
-        author: newAuthor,
-        genre: newGenre
-      });
-      loadBooks();
-    }
-  });
-
-  libraryDiv.appendChild(card);
+  return card;
 }
 
-// ✅ Add a new book
-bookForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+// ✅ Edit Book
+window.editBook = async function (id) {
+  const newTitle = prompt("Enter new title:");
+  if (!newTitle) return;
+  const bookRef = doc(db, "books", id);
+  await updateDoc(bookRef, { title: newTitle });
+  loadLibrary();
+};
 
-  const title = document.getElementById("title").value.trim();
-  const author = document.getElementById("author").value.trim();
-  const genre = document.getElementById("genre").value.trim();
-
-  if (title && author && genre) {
-    await addDoc(booksCollection, { title, author, genre });
-    bookForm.reset();
-    loadBooks();
+// ✅ Delete Book
+window.deleteBook = async function (id) {
+  if (confirm("Are you sure you want to delete this book?")) {
+    await deleteDoc(doc(db, "books", id));
+    loadLibrary();
   }
-});
+};
 
-// ✅ Search functionality
-searchInput.addEventListener("input", async () => {
-  const searchTerm = searchInput.value.toLowerCase();
-  libraryDiv.innerHTML = "";
-
-  const querySnapshot = await getDocs(booksCollection);
+// ✅ Search Books
+window.searchBooks = async function () {
+  const term = searchInput.value.toLowerCase();
+  searchResults.innerHTML = "";
+  const querySnapshot = await getDocs(collection(db, "books"));
   querySnapshot.forEach((docSnap) => {
     const book = docSnap.data();
     if (
-      book.title.toLowerCase().includes(searchTerm) ||
-      book.author.toLowerCase().includes(searchTerm)
+      book.title.toLowerCase().includes(term) ||
+      book.author.toLowerCase().includes(term) ||
+      (book.isbn && book.isbn.toLowerCase().includes(term))
     ) {
-      displayBook(docSnap.id, book);
+      const card = createBookCard(book, docSnap.id);
+      searchResults.appendChild(card);
     }
   });
-});
+};
 
-// Initial load
-loadBooks();
+// ✅ Tab Switcher
+window.showTab = function (tab) {
+  document.getElementById("libraryTab").style.display =
+    tab === "library" ? "block" : "none";
+  document.getElementById("searchTab").style.display =
+    tab === "search" ? "block" : "none";
+};
+
+// Load on start
+loadLibrary();

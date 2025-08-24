@@ -1,8 +1,8 @@
-// Import Firebase SDK
+// Import Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// 🔑 Your Firebase Config (replace with your actual keys)
+// ✅ Your Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
   authDomain: "readvault-58040.firebaseapp.com",
