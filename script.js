@@ -52,7 +52,7 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
 // Profile elements
-const profileIcon = document.getElementById("profileIcon");
+const profileToggle = document.getElementById("profileToggle");
 const profileSection = document.getElementById("profileSection");
 const profileName = document.getElementById("profileName");
 const profileBio = document.getElementById("profileBio");
@@ -145,19 +145,18 @@ async function loadBooks(uid) {
     `;
 
     // ---- Edit Book ----
-    li.querySelector(".editBtn").addEventListener("click", () => {
+    li.querySelector(".editBtn").addEventListener("click", async () => {
       const newName = prompt("Edit book name:", book.name);
       const newAuthor = prompt("Edit author name:", book.author || "");
       if (!newName) return;
-      setDoc(doc(db, "users", uid, "books", docItem.id), {
+      await setDoc(doc(db, "users", uid, "books", docItem.id), {
         name: newName,
         author: newAuthor,
         isbn: book.isbn,
         cover: book.cover
-      }, { merge: true }).then(() => {
-        alert(`✏️ "${newName}" updated!`);
-        loadBooks(uid);
-      });
+      }, { merge: true });
+      alert(`✏️ "${newName}" updated!`);
+      loadBooks(uid);
     });
 
     // ---- Delete Book ----
@@ -231,7 +230,7 @@ searchBtn.addEventListener("click", async () => {
 });
 
 // ---- Profile Toggle ----
-profileIcon.addEventListener("click", () => {
+profileToggle.addEventListener("click", () => {
   profileSection.classList.toggle("hidden");
 });
 
@@ -243,7 +242,7 @@ async function loadProfile(uid) {
     const data = docSnap.data();
     profileName.value = data.displayName || "";
     profileBio.value = data.bio || "";
-    profilePhoto.src = data.photoURL || "";
+    if (profilePhoto) profilePhoto.src = data.photoURL || "";
   }
 }
 
@@ -256,7 +255,7 @@ saveProfileBtn.addEventListener("click", async () => {
   await setDoc(userRef, {
     displayName: profileName.value.trim(),
     bio: profileBio.value.trim(),
-    photoURL: profilePhoto.src
+    photoURL: profilePhoto ? profilePhoto.src : ""
   }, { merge: true });
 
   alert("✅ Profile saved successfully!");
