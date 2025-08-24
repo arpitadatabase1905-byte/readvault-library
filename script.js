@@ -15,7 +15,7 @@ import {
   doc, 
   setDoc, 
   deleteDoc,
-  getDoc           // <-- FIXED: Added getDoc
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ---- Firebase Config ----
@@ -70,8 +70,18 @@ signupBtn.addEventListener("click", async () => {
   const email = signupEmail.value.trim();
   const password = signupPassword.value.trim();
   if (!email || !password) return alert("Enter both email and password");
+
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+    // ✅ Create Firestore user document on signup
+    const userDocRef = doc(db, "users", userCredential.user.uid);
+    await setDoc(userDocRef, {
+      email: userCredential.user.email,
+      displayName: "",
+      bio: ""
+    });
+
     alert(`✅ Signup successful: ${userCredential.user.email}`);
     signupEmail.value = "";
     signupPassword.value = "";
@@ -85,6 +95,7 @@ loginBtn.addEventListener("click", async () => {
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
   if (!email || !password) return alert("Enter both email and password");
+
   try {
     await signInWithEmailAndPassword(auth, email, password);
     alert("✅ Logged in!");
@@ -115,18 +126,21 @@ onAuthStateChanged(auth, async (user) => {
     // Load Profile
     const userDoc = doc(db, "users", user.uid);
     try {
-      const docSnap = await getDoc(userDoc);   // <-- Works now
+      const docSnap = await getDoc(userDoc);
       if (docSnap.exists()) {
         const data = docSnap.data();
         profileEmail.textContent = data.email || user.email;
         profileName.value = data.displayName || "";
         profileBio.value = data.bio || "";
       } else {
+        // Create doc if missing (should not happen after signup)
+        await setDoc(userDoc, { email: user.email, displayName: "", bio: "" });
         profileEmail.textContent = user.email;
       }
     } catch (err) {
       console.error("Error loading profile:", err);
     }
+
   } else {
     authSection.classList.remove("hidden");
     librarySection.classList.add("hidden");
@@ -184,7 +198,9 @@ async function loadBooks(uid) {
 searchBtn.addEventListener("click", async () => {
   const query = searchTitle.value.trim();
   if (!query) return alert("Enter a book name to search");
+
   searchResultsDiv.innerHTML = "Searching...";
+
   try {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
     const data = await response.json();
@@ -192,6 +208,7 @@ searchBtn.addEventListener("click", async () => {
     if (!data.items || data.items.length === 0) return searchResultsDiv.innerHTML = "No books found.";
 
     const user = auth.currentUser;
+
     data.items.forEach(item => {
       const book = item.volumeInfo;
       const title = book.title || "Unknown title";
@@ -208,6 +225,7 @@ searchBtn.addEventListener("click", async () => {
         ${thumbnail ? `<img src="${thumbnail}" alt="cover">` : ""}<br>
         <button class="addBtn">Add</button>
       `;
+
       div.querySelector(".addBtn").addEventListener("click", async () => {
         if (!user) return alert("Login first!");
         await addDoc(collection(db, "users", user.uid, "books"), { name: title, author: authors, isbn, cover: thumbnail });
