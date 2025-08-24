@@ -1,216 +1,98 @@
-// script.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  deleteDoc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+import { auth, db } from "./Firebase.js";
+import { collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// 🔹 Firebase Config
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+// Dummy user (replace with real auth later)
+const userId = "demoUser";
+
+// ====================== TAB SWITCH ======================
+window.showTab = function(tab) {
+  document.getElementById("libraryTab").style.display = tab === "library" ? "block" : "none";
+  document.getElementById("genreTab").style.display = tab === "genreCollection" ? "block" : "none";
 };
 
-// 🔹 Init Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// ====================== ADD BOOK (Example Data) ======================
+// You’ll replace this with Google Books API search later
+async function addSampleBooks() {
+  const sampleBooks = [
+    { title: "Book A", authors: "Author 1", genre: "Fiction", cover: "https://via.placeholder.com/100x150" },
+    { title: "Book B", authors: "Author 2", genre: "History", cover: "https://via.placeholder.com/100x150" },
+    { title: "Book C", authors: "Author 3", genre: "Science", cover: "https://via.placeholder.com/100x150" },
+    { title: "Book D", authors: "Author 4", genre: "Fiction", cover: "https://via.placeholder.com/100x150" },
+  ];
 
-// 🔹 DOM Elements
-const loginSection = document.getElementById("login-section");
-const signupSection = document.getElementById("signup-section");
-const librarySection = document.getElementById("library-section");
-const loginForm = document.getElementById("login-form");
-const signupForm = document.getElementById("signup-form");
-const addBookForm = document.getElementById("add-book-form");
-const bookListDiv = document.getElementById("book-list");
-const genreListDiv = document.getElementById("genre-list");
-const logoutBtn = document.getElementById("logout-btn");
-
-// Tabs
-const libraryTab = document.getElementById("library-tab");
-const genreTab = document.getElementById("genre-tab");
-
-// ---------------- AUTH -----------------
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    loginSection.style.display = "none";
-    signupSection.style.display = "none";
-    librarySection.style.display = "block";
-    loadBooks(user.uid);
-    loadBooksByGenre(user.uid);
-  } else {
-    loginSection.style.display = "block";
-    signupSection.style.display = "none";
-    librarySection.style.display = "none";
+  for (let book of sampleBooks) {
+    const docRef = doc(collection(db, "users", userId, "books"));
+    await setDoc(docRef, book);
   }
-});
+}
 
-// Login
-loginForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
+// ====================== FETCH BOOKS ======================
+async function fetchBooks() {
+  const querySnap = await getDocs(collection(db, "users", userId, "books"));
+  const books = [];
+  querySnap.forEach(doc => books.push(doc.data()));
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-  } catch (err) {
-    alert(err.message);
-  }
-});
+  displayBooks(books);
+  displayBooksByGenre(books);
+}
 
-// Signup
-signupForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("signup-email").value;
-  const password = document.getElementById("signup-password").value;
+// ====================== DISPLAY LIBRARY ======================
+function displayBooks(books) {
+  const libraryDiv = document.getElementById("library");
+  libraryDiv.innerHTML = "";
 
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// Logout
-logoutBtn?.addEventListener("click", () => {
-  signOut(auth);
-});
-
-// ---------------- BOOK FUNCTIONS -----------------
-
-// Add Book
-addBookForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const user = auth.currentUser;
-  if (!user) return;
-
-  const name = document.getElementById("book-name").value;
-  const author = document.getElementById("book-author").value;
-  const isbn = document.getElementById("book-isbn").value;
-  const cover = document.getElementById("book-cover").value;
-  const genre = document.getElementById("book-genre").value;
-
-  try {
-    await addDoc(collection(db, "users", user.uid, "books"), {
-      name,
-      author,
-      isbn,
-      cover,
-      genre
-    });
-    alert(`✅ "${name}" added!`);
-    addBookForm.reset();
-    loadBooks(user.uid);
-    loadBooksByGenre(user.uid);
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-// Load Books (Library Tab → 3 per row)
-async function loadBooks(userId) {
-  const booksRef = collection(db, "users", userId, "books");
-  const snapshot = await getDocs(booksRef);
-
-  bookListDiv.innerHTML = "";
-
-  snapshot.forEach(docItem => {
-    const book = docItem.data();
-    const bookDiv = document.createElement("div");
-    bookDiv.classList.add("book-item");
-
-    bookDiv.innerHTML = `
-      ${book.cover ? `<img src="${book.cover}" alt="cover" style="height:150px;">` : ""}
-      <h4>${book.name}</h4>
-      <p>${book.author || "Unknown"}</p>
-      <p>Genre: ${book.genre || "Unknown"}</p>
-      <p>ISBN: ${book.isbn}</p>
-      <button class="editBtn">Edit</button>
-      <button class="deleteBtn">Delete</button>
+  books.forEach(book => {
+    const card = document.createElement("div");
+    card.classList.add("book-card");
+    card.innerHTML = `
+      <img src="${book.cover}" alt="${book.title}">
+      <h3>${book.title}</h3>
+      <p>${book.authors}</p>
+      <span class="genre-tag">${book.genre || "Unknown"}</span>
     `;
-
-    // Edit
-    bookDiv.querySelector(".editBtn").addEventListener("click", async () => {
-      const newName = prompt("Edit book name:", book.name);
-      const newAuthor = prompt("Edit author:", book.author || "");
-      const newGenre = prompt("Edit genre:", book.genre || "");
-      if (!newName) return;
-      await setDoc(doc(db, "users", userId, "books", docItem.id), {
-        name: newName, author: newAuthor, isbn: book.isbn, cover: book.cover, genre: newGenre
-      }, { merge: true });
-      alert(`✏️ "${newName}" updated!`);
-      loadBooks(userId);
-      loadBooksByGenre(userId);
-    });
-
-    // Delete
-    bookDiv.querySelector(".deleteBtn").addEventListener("click", async () => {
-      if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
-        await deleteDoc(doc(db, "users", userId, "books", docItem.id));
-        alert(`🗑 "${book.name}" deleted!`);
-        loadBooks(userId);
-        loadBooksByGenre(userId);
-      }
-    });
-
-    bookListDiv.appendChild(bookDiv);
+    libraryDiv.appendChild(card);
   });
 }
 
-// Load Books by Genre (Genre Tab)
-async function loadBooksByGenre(userId) {
-  const booksRef = collection(db, "users", userId, "books");
-  const snapshot = await getDocs(booksRef);
+// ====================== DISPLAY GENRE COLLECTION ======================
+function displayBooksByGenre(books) {
+  const genreDiv = document.getElementById("genreCollection");
+  genreDiv.innerHTML = "";
 
-  const genres = {};
-  snapshot.forEach(docItem => {
-    const book = docItem.data();
+  const grouped = {};
+  books.forEach(book => {
     const genre = book.genre || "Unknown";
-    if (!genres[genre]) genres[genre] = [];
-    genres[genre].push(book);
+    if (!grouped[genre]) grouped[genre] = [];
+    grouped[genre].push(book);
   });
 
-  genreListDiv.innerHTML = "";
+  for (let genre in grouped) {
+    const section = document.createElement("div");
+    section.classList.add("genre-section");
+    section.innerHTML = `<h2>${genre}</h2>`;
 
-  for (const [genre, books] of Object.entries(genres)) {
-    const genreDiv = document.createElement("div");
-    genreDiv.innerHTML = `<h3>${genre}</h3>`;
-    books.forEach(book => {
-      genreDiv.innerHTML += `
-        <div class="book-item">
-          ${book.cover ? `<img src="${book.cover}" alt="cover" style="height:120px;">` : ""}
-          <p><strong>${book.name}</strong> by ${book.author || "Unknown"}</p>
-        </div>
+    const row = document.createElement("div");
+    row.classList.add("book-grid");
+
+    grouped[genre].forEach(book => {
+      const card = document.createElement("div");
+      card.classList.add("book-card");
+      card.innerHTML = `
+        <img src="${book.cover}" alt="${book.title}">
+        <h3>${book.title}</h3>
+        <p>${book.authors}</p>
       `;
+      row.appendChild(card);
     });
-    genreListDiv.appendChild(genreDiv);
+
+    section.appendChild(row);
+    genreDiv.appendChild(section);
   }
 }
 
-// ---------------- TAB SWITCHING -----------------
-libraryTab?.addEventListener("click", () => {
-  document.getElementById("library").style.display = "block";
-  document.getElementById("genres").style.display = "none";
-});
-
-genreTab?.addEventListener("click", () => {
-  document.getElementById("library").style.display = "none";
-  document.getElementById("genres").style.display = "block";
-});
+// ====================== INIT ======================
+(async function init() {
+  // Uncomment this once only to add dummy books:
+  // await addSampleBooks();
+  await fetchBooks();
+})();
