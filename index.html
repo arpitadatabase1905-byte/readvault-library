@@ -2,8 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>📚 My Online Library</title>
-  <link rel="stylesheet" href="style.css">
+  <title>My Online Library</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    #loginSection, #logoutSection {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #bookList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .book-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .book-cover {
+      width: 100px;
+      height: auto;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .book-title {
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .book-author, .book-isbn {
+      font-size: 0.9em;
+      margin: 2px 0;
+      color: #555;
+    }
+
+    .book-actions {
+      margin-top: 10px;
+    }
+
+    .book-actions button {
+      margin: 0 5px;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #007bff;
+      color: #fff;
+    }
+
+    .book-actions button.deleteBtn {
+      background: #dc3545;
+    }
+  </style>
 </head>
 <body>
   <h1>📚 My Online Library</h1>
@@ -30,13 +98,13 @@
 
     // ---- Firebase Config ----
     const firebaseConfig = {
-      apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
-      authDomain: "readvault-58040.firebaseapp.com",
-      projectId: "readvault-58040",
-      storageBucket: "readvault-58040.appspot.com",
-      messagingSenderId: "735101113966",
-      appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
-    };
+  apiKey: "AIzaSyDRIOLQBYUVU0LopAW077qCkvkp6TAboj8",
+  authDomain: "readvault-58040.firebaseapp.com",
+  projectId: "readvault-58040",
+  storageBucket: "readvault-58040.appspot.com",
+  messagingSenderId: "735101113966",
+  appId: "1:735101113966:web:73583ee54e9ac092f3b87f"
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -82,20 +150,13 @@
     async function loadBooks(uid) {
       bookList.innerHTML = "";
       const querySnapshot = await getDocs(collection(db, "users", uid, "books"));
-      const booksArray = [];
       querySnapshot.forEach((docItem) => {
-        booksArray.push({ id: docItem.id, data: docItem.data() });
-      });
+        const book = docItem.data();
 
-      // ---- Sort alphabetically by name ----
-      booksArray.sort((a, b) => a.data.name.localeCompare(b.data.name));
-
-      booksArray.forEach((bookItem) => {
-        const book = bookItem.data;
         const li = document.createElement("li");
         li.innerHTML = `
           <div class="book-card">
-            <img src="${book.cover || 'https://via.placeholder.com/150'}" alt="cover" class="book-cover">
+            <img src="${book.cover || 'https://via.placeholder.com/100'}" alt="cover" class="book-cover">
             <p class="book-title">${book.name}</p>
             <p class="book-author">by ${book.author || "Unknown"}</p>
             <p class="book-isbn">ISBN: ${book.isbn}</p>
@@ -114,8 +175,12 @@
 
           if (newName && newAuthor && newISBN) {
             try {
-              const bookRef = doc(db, "users", uid, "books", bookItem.id);
-              await updateDoc(bookRef, { name: newName, author: newAuthor, isbn: newISBN });
+              const bookRef = doc(db, "users", uid, "books", docItem.id);
+              await updateDoc(bookRef, {
+                name: newName,
+                author: newAuthor,
+                isbn: newISBN
+              });
               alert(`✏️ "${newName}" updated!`);
               loadBooks(uid);
             } catch (err) {
@@ -128,7 +193,7 @@
         // ---- Delete ----
         li.querySelector(".deleteBtn").addEventListener("click", async () => {
           if (confirm(`Delete "${book.name}"?`)) {
-            await deleteDoc(doc(db, "users", uid, "books", bookItem.id));
+            await deleteDoc(doc(db, "users", uid, "books", docItem.id));
             alert(`🗑️ "${book.name}" deleted!`);
             loadBooks(uid);
           }
