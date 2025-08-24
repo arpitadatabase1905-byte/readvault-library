@@ -11,7 +11,10 @@ import {
   getFirestore, 
   collection, 
   addDoc, 
-  getDocs 
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ---- Firebase Config ----
@@ -42,7 +45,7 @@ const signupBtn = document.getElementById("signupBtn");
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
-// Library inputs
+// Library elements
 const bookList = document.getElementById("bookList");
 
 // Search inputs
@@ -114,15 +117,46 @@ async function loadBooks(uid) {
   const booksRef = collection(db, "users", uid, "books");
   const snapshot = await getDocs(booksRef);
 
-  snapshot.forEach((doc) => {
-    const book = doc.data();
+  snapshot.forEach((docItem) => {
+    const book = docItem.data();
     const li = document.createElement("li");
     li.innerHTML = `
       <strong>${book.name}</strong><br>
       <em>${book.author || "Unknown author"}</em><br>
       ISBN: ${book.isbn}<br>
       ${book.cover ? `<img src="${book.cover}" alt="cover">` : ""}
+      <br>
+      <button class="editBtn">Edit</button>
+      <button class="deleteBtn">Delete</button>
     `;
+
+    // ---- Edit Book ----
+    const editBtn = li.querySelector(".editBtn");
+    editBtn.addEventListener("click", async () => {
+      const newName = prompt("Enter new book title:", book.name) || book.name;
+      const newAuthor = prompt("Enter new author:", book.author || "") || book.author;
+      const newISBN = prompt("Enter new ISBN:", book.isbn) || book.isbn;
+
+      await updateDoc(doc(db, "users", uid, "books", docItem.id), {
+        name: newName,
+        author: newAuthor,
+        isbn: newISBN
+      });
+
+      alert(`✅ "${newName}" updated!`);
+      loadBooks(uid);
+    });
+
+    // ---- Delete Book ----
+    const deleteBtn = li.querySelector(".deleteBtn");
+    deleteBtn.addEventListener("click", async () => {
+      if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
+        await deleteDoc(doc(db, "users", uid, "books", docItem.id));
+        alert(`🗑 "${book.name}" deleted!`);
+        loadBooks(uid);
+      }
+    });
+
     bookList.appendChild(li);
   });
 }
@@ -137,7 +171,7 @@ searchBtn.addEventListener("click", async () => {
   try {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
     const data = await response.json();
-    searchResultsDiv.innerHTML = ""; // clear previous results
+    searchResultsDiv.innerHTML = "";
 
     if (!data.items || data.items.length === 0) {
       searchResultsDiv.innerHTML = "No books found.";
