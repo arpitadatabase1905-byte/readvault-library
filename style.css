@@ -63,3 +63,13 @@ h1 {
 .search-item { background: #fff; border-radius: 8px; padding: 10px; width: 200px; text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
 .search-item button { margin-top: 5px; padding: 5px 8px; border-radius: 6px; border: none; background: #28a745; color: white; cursor: pointer; font-weight: bold; }
 .search-item button:hover { background: #45c266; }
+
+.library-container {
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 20px;
+  background: #fdfdfd;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  max-width: 750px; /* width for 3 cards per row */
+  margin: 0 auto 30px auto;
+}
