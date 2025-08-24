@@ -130,7 +130,77 @@ async function loadBooks(uid) {
 
     allBooksTab.appendChild(li);
   });
-  loadBooksByGenre();
+  // ---- Load Books By Genre (sorted) ----
+async function loadBooksByGenre() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const booksRef = collection(db, "users", user.uid, "books");
+  const snapshot = await getDocs(booksRef);
+
+  const books = snapshot.docs.map(docItem => ({ id: docItem.id, ...docItem.data() }));
+  const genreMap = {};
+
+  // Organize books by genre
+  books.forEach(book => {
+    const genre = book.genre || "Unknown";
+    if (!genreMap[genre]) genreMap[genre] = [];
+    genreMap[genre].push(book);
+  });
+
+  // Sort genres alphabetically
+  const sortedGenres = Object.keys(genreMap).sort();
+
+  genreListDiv.innerHTML = "";
+
+  sortedGenres.forEach(genre => {
+    const booksArr = genreMap[genre];
+    // Sort books by name
+    booksArr.sort((a, b) => a.name.localeCompare(b.name));
+
+    const genreDiv = document.createElement("div");
+    genreDiv.innerHTML = `<h3>${genre}</h3>`;
+
+    booksArr.forEach(book => {
+      const bookDiv = document.createElement("div");
+      bookDiv.classList.add("genre-item");
+      bookDiv.innerHTML = `
+        <strong>${book.name}</strong><br>
+        <em>${book.author || "Unknown"}</em><br>
+        ISBN: ${book.isbn}<br>
+        ${book.cover ? `<img src="${book.cover}" alt="cover" style="height:120px;margin:5px;">` : ""}<br>
+        <button class="editBtn">Edit</button>
+        <button class="deleteBtn">Delete</button>
+      `;
+
+      // Edit book
+      bookDiv.querySelector(".editBtn").addEventListener("click", async () => {
+        const newName = prompt("Edit book name:", book.name);
+        const newAuthor = prompt("Edit author:", book.author || "");
+        const newGenre = prompt("Edit genre:", book.genre || "");
+        if (!newName) return;
+        await setDoc(doc(db, "users", user.uid, "books", book.id), {
+          name: newName, author: newAuthor, isbn: book.isbn, cover: book.cover, genre: newGenre
+        }, { merge: true });
+        alert(`✏️ "${newName}" updated!`);
+        loadBooks(user.uid);
+      });
+
+      // Delete book
+      bookDiv.querySelector(".deleteBtn").addEventListener("click", async () => {
+        if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
+          await deleteDoc(doc(db, "users", user.uid, "books", book.id));
+          alert(`🗑 "${book.name}" deleted!`);
+          loadBooks(user.uid);
+        }
+      });
+
+      genreDiv.appendChild(bookDiv);
+    });
+
+    genreListDiv.appendChild(genreDiv);
+  });
+}
+
 }
 
 // ---- Google Books Search ----
