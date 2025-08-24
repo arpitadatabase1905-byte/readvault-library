@@ -42,7 +42,7 @@
 
     <!-- Wishlist -->
     <div id="wishlist" class="tab-content">
-      <p style="text-align:center;">⭐ Your wishlist will appear here...</p>
+      <ul id="wishlistList"></ul>
     </div>
   </div>
 
@@ -72,6 +72,7 @@
     const logoutSection = document.getElementById("logoutSection");
     const userName = document.getElementById("userName");
     const bookList = document.getElementById("bookList");
+    const wishlistList = document.getElementById("wishlistList");
     const searchTitle = document.getElementById("searchTitle");
     const searchBtn = document.getElementById("searchBtn");
     const searchResultsDiv = document.getElementById("searchResults");
@@ -96,11 +97,13 @@
         logoutSection.style.display = "block";
         userName.textContent = user.displayName;
         loadBooks(user.uid);
+        loadWishlist(user.uid);
       } else {
         currentUser = null;
         loginSection.style.display = "block";
         logoutSection.style.display = "none";
         bookList.innerHTML = "";
+        wishlistList.innerHTML = "";
         searchResultsDiv.innerHTML = "";
       }
     });
@@ -163,6 +166,43 @@
       });
     }
 
+    // ---- Load Wishlist ----
+    async function loadWishlist(uid) {
+      wishlistList.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "users", uid, "wishlist"));
+
+      const wishlistArray = [];
+      querySnapshot.forEach(docItem => {
+        wishlistArray.push({ id: docItem.id, ...docItem.data() });
+      });
+      wishlistArray.sort((a, b) => a.name.localeCompare(b.name));
+
+      wishlistArray.forEach(book => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="book-card">
+            <img src="${book.cover || 'https://via.placeholder.com/150'}" alt="cover" class="book-cover">
+            <p class="book-title">${book.name}</p>
+            <p class="book-author">by ${book.author || "Unknown"}</p>
+            <p class="book-isbn">ISBN: ${book.isbn}</p>
+            <div class="book-actions">
+              <button class="deleteWishlistBtn">❌ Remove</button>
+            </div>
+          </div>
+        `;
+
+        li.querySelector(".deleteWishlistBtn").addEventListener("click", async () => {
+          if (confirm(`Remove "${book.name}" from wishlist?`)) {
+            await deleteDoc(doc(db, "users", currentUser.uid, "wishlist", book.id));
+            alert(`❌ "${book.name}" removed from wishlist!`);
+            loadWishlist(currentUser.uid);
+          }
+        });
+
+        wishlistList.appendChild(li);
+      });
+    }
+
     // ---- Search Books (Google Books API) ----
     searchBtn.addEventListener("click", async () => {
       const query = searchTitle.value.trim();
@@ -193,9 +233,11 @@
             <em>${authors}</em><br>
             ISBN: ${isbn}<br>
             ${thumbnail ? `<img src="${thumbnail}" alt="cover" style="height:120px;margin:5px 0;">` : ""}<br>
-            <button class="addBtn">Add</button>
+            <button class="addBtn">Add to Library</button>
+            <button class="wishlistBtn">Add to Wishlist</button>
           `;
 
+          // Add to Library
           div.querySelector(".addBtn").addEventListener("click", async () => {
             if (!currentUser) return alert("Login first!");
             await addDoc(collection(db, "users", currentUser.uid, "books"), {
@@ -206,6 +248,19 @@
             });
             alert(`✅ "${title}" added to your library!`);
             loadBooks(currentUser.uid);
+          });
+
+          // Add to Wishlist
+          div.querySelector(".wishlistBtn").addEventListener("click", async () => {
+            if (!currentUser) return alert("Login first!");
+            await addDoc(collection(db, "users", currentUser.uid, "wishlist"), {
+              name: title,
+              author: authors,
+              isbn: isbn,
+              cover: thumbnail
+            });
+            alert(`⭐ "${title}" added to your wishlist!`);
+            loadWishlist(currentUser.uid);
           });
 
           searchResultsDiv.appendChild(div);
