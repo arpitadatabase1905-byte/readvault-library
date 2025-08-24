@@ -1,24 +1,12 @@
 // ---- Firebase Setup ----
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged 
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  getDoc,
-  serverTimestamp
+  getFirestore, collection, addDoc, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // ---- Firebase Config ----
 const firebaseConfig = {
@@ -34,6 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // ---- DOM Elements ----
 const authSection = document.getElementById("authSection");
@@ -57,6 +46,8 @@ const profileSection = document.getElementById("profileSection");
 const profileName = document.getElementById("profileName");
 const profileBio = document.getElementById("profileBio");
 const profilePhoto = document.getElementById("profilePhoto");
+const profilePhotoInput = document.getElementById("profilePhotoInput");
+const profileEmailSpan = document.getElementById("profileEmail");
 const saveProfileBtn = document.getElementById("saveProfileBtn");
 
 // ---- Signup ----
@@ -115,6 +106,7 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     authSection.classList.add("hidden");
     librarySection.classList.remove("hidden");
+    profileEmailSpan.textContent = user.email;
     await loadBooks(user.uid);
     await loadProfile(user.uid);
   } else {
@@ -144,22 +136,23 @@ async function loadBooks(uid) {
       <button class="deleteBtn">Delete</button>
     `;
 
-    // ---- Edit Book ----
-    li.querySelector(".editBtn").addEventListener("click", async () => {
+    // Edit book
+    li.querySelector(".editBtn").addEventListener("click", () => {
       const newName = prompt("Edit book name:", book.name);
       const newAuthor = prompt("Edit author name:", book.author || "");
       if (!newName) return;
-      await setDoc(doc(db, "users", uid, "books", docItem.id), {
+      setDoc(doc(db, "users", uid, "books", docItem.id), {
         name: newName,
         author: newAuthor,
         isbn: book.isbn,
         cover: book.cover
-      }, { merge: true });
-      alert(`✏️ "${newName}" updated!`);
-      loadBooks(uid);
+      }, { merge: true }).then(() => {
+        alert(`✏️ "${newName}" updated!`);
+        loadBooks(uid);
+      });
     });
 
-    // ---- Delete Book ----
+    // Delete book
     li.querySelector(".deleteBtn").addEventListener("click", async () => {
       if (confirm(`Are you sure you want to delete "${book.name}"?`)) {
         await deleteDoc(doc(db, "users", uid, "books", docItem.id));
@@ -209,14 +202,12 @@ searchBtn.addEventListener("click", async () => {
       addBtn.addEventListener("click", async () => {
         const user = auth.currentUser;
         if (!user) return alert("Login first!");
-
         await addDoc(collection(db, "users", user.uid, "books"), {
           name: title,
           author: authors,
           isbn: isbn,
           cover: thumbnail
         });
-
         alert(`✅ "${title}" added to your library!`);
         loadBooks(user.uid);
       });
@@ -242,8 +233,16 @@ async function loadProfile(uid) {
     const data = docSnap.data();
     profileName.value = data.displayName || "";
     profileBio.value = data.bio || "";
-    if (profilePhoto) profilePhoto.src = data.photoURL || "";
+    profilePhoto.src = data.photoURL || "";
   }
+}
+
+// ---- Upload Profile Photo ----
+async function uploadProfilePhoto(userId, file) {
+  const storageRef = ref(storage, `profilePhotos/${userId}`);
+  await uploadBytes(storageRef, file);
+  const photoURL = await getDownloadURL(storageRef);
+  return photoURL;
 }
 
 // ---- Save Profile ----
@@ -251,12 +250,20 @@ saveProfileBtn.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return alert("Login first!");
 
+  let photoURL = profilePhoto.src;
+
+  if (profilePhotoInput.files.length > 0) {
+    const file = profilePhotoInput.files[0];
+    photoURL = await uploadProfilePhoto(user.uid, file);
+  }
+
   const userRef = doc(db, "users", user.uid);
   await setDoc(userRef, {
     displayName: profileName.value.trim(),
     bio: profileBio.value.trim(),
-    photoURL: profilePhoto ? profilePhoto.src : ""
+    photoURL: photoURL
   }, { merge: true });
 
+  profilePhoto.src = photoURL;
   alert("✅ Profile saved successfully!");
 });

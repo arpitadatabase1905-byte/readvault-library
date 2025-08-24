@@ -129,6 +129,7 @@
       width: 100%;
       margin-bottom: 8px;
     }
+
     #saveProfileBtn { background: #1a73e8; color: #fff; }
   </style>
 </head>
@@ -157,6 +158,11 @@
       <p><strong>Email:</strong> <span id="profileEmail"></span></p>
       <p><strong>Name:</strong> <input type="text" id="profileName"></p>
       <p><strong>Bio:</strong> <textarea id="profileBio" rows="3"></textarea></p>
+      
+      <p><strong>Photo:</strong></p>
+      <img id="profilePhoto" src="" alt="Profile Photo" style="width:100px; height:100px; border-radius:50%; display:block; margin-bottom:10px;">
+      <input type="file" id="profilePhotoInput" accept="image/*">
+
       <button id="saveProfileBtn">Save Profile</button>
     </div>
 
