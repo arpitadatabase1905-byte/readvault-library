@@ -19,6 +19,32 @@
       margin-bottom: 20px;
     }
 
+    #addBookForm {
+      max-width: 500px;
+      margin: 0 auto 20px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    #addBookForm input {
+      width: calc(100% - 20px);
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    #addBookForm button {
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: none;
+      background: #28a745;
+      color: #fff;
+      cursor: pointer;
+    }
+
     #bookList {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -85,6 +111,16 @@
     <button id="logoutBtn">Logout</button>
   </div>
 
+  <!-- Add Book Form -->
+  <div id="addBookForm" style="display:none;">
+    <h3>Add a New Book</h3>
+    <input type="text" id="newBookName" placeholder="Book Title">
+    <input type="text" id="newBookAuthor" placeholder="Author">
+    <input type="text" id="newBookISBN" placeholder="ISBN">
+    <input type="text" id="newBookCover" placeholder="Cover Image URL (optional)">
+    <button id="addBookBtn">Add Book</button>
+  </div>
+
   <!-- Book List -->
   <ul id="bookList"></ul>
 
@@ -93,7 +129,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } 
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } 
+    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, addDoc } 
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     // ---- Firebase Config ----
@@ -118,6 +154,13 @@
     const userName = document.getElementById("userName");
     const bookList = document.getElementById("bookList");
 
+    const addBookForm = document.getElementById("addBookForm");
+    const newBookName = document.getElementById("newBookName");
+    const newBookAuthor = document.getElementById("newBookAuthor");
+    const newBookISBN = document.getElementById("newBookISBN");
+    const newBookCover = document.getElementById("newBookCover");
+    const addBookBtn = document.getElementById("addBookBtn");
+
     let currentUser = null;
 
     // ---- Login ----
@@ -136,12 +179,14 @@
         currentUser = user;
         loginSection.style.display = "none";
         logoutSection.style.display = "block";
+        addBookForm.style.display = "block";
         userName.textContent = user.displayName;
         loadBooks(user.uid);
       } else {
         currentUser = null;
         loginSection.style.display = "block";
         logoutSection.style.display = "none";
+        addBookForm.style.display = "none";
         bookList.innerHTML = "";
       }
     });
@@ -150,9 +195,15 @@
     async function loadBooks(uid) {
       bookList.innerHTML = "";
       const querySnapshot = await getDocs(collection(db, "users", uid, "books"));
-      querySnapshot.forEach((docItem) => {
-        const book = docItem.data();
+      let books = [];
+      querySnapshot.forEach(docItem => {
+        books.push({ id: docItem.id, ...docItem.data() });
+      });
 
+      // Sort alphabetically by book name
+      books.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
+      books.forEach(book => {
         const li = document.createElement("li");
         li.innerHTML = `
           <div class="book-card">
@@ -167,7 +218,7 @@
           </div>
         `;
 
-        // ---- Edit ----
+        // Edit
         li.querySelector(".editBtn").addEventListener("click", async () => {
           const newName = prompt("Enter new book title:", book.name);
           const newAuthor = prompt("Enter new author:", book.author || "Unknown");
@@ -175,25 +226,20 @@
 
           if (newName && newAuthor && newISBN) {
             try {
-              const bookRef = doc(db, "users", uid, "books", docItem.id);
-              await updateDoc(bookRef, {
-                name: newName,
-                author: newAuthor,
-                isbn: newISBN
-              });
+              const bookRef = doc(db, "users", uid, "books", book.id);
+              await updateDoc(bookRef, { name: newName, author: newAuthor, isbn: newISBN });
               alert(`✏️ "${newName}" updated!`);
               loadBooks(uid);
             } catch (err) {
-              console.error("Update failed:", err);
               alert("❌ Failed to update: " + err.message);
             }
           }
         });
 
-        // ---- Delete ----
+        // Delete
         li.querySelector(".deleteBtn").addEventListener("click", async () => {
           if (confirm(`Delete "${book.name}"?`)) {
-            await deleteDoc(doc(db, "users", uid, "books", docItem.id));
+            await deleteDoc(doc(db, "users", uid, "books", book.id));
             alert(`🗑️ "${book.name}" deleted!`);
             loadBooks(uid);
           }
@@ -202,6 +248,28 @@
         bookList.appendChild(li);
       });
     }
+
+    // ---- Add New Book ----
+    addBookBtn.addEventListener("click", async () => {
+      const name = newBookName.value.trim();
+      const author = newBookAuthor.value.trim();
+      const isbn = newBookISBN.value.trim();
+      const cover = newBookCover.value.trim();
+
+      if (!name || !author || !isbn) return alert("Please fill Title, Author and ISBN");
+
+      try {
+        await addDoc(collection(db, "users", currentUser.uid, "books"), { name, author, isbn, cover });
+        alert(`✅ "${name}" added!`);
+        newBookName.value = "";
+        newBookAuthor.value = "";
+        newBookISBN.value = "";
+        newBookCover.value = "";
+        loadBooks(currentUser.uid);
+      } catch (err) {
+        alert("❌ Failed to add book: " + err.message);
+      }
+    });
   </script>
 </body>
 </html>
